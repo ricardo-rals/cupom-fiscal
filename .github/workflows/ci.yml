@@ -8,6 +8,20 @@ on:
 jobs:
   api:
     runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: cupom
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: cupom
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U cupom"
+          --health-interval 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://cupom:ci@localhost:5432/cupom
     defaults:
       run:
         working-directory: apps/api
@@ -21,6 +35,7 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
+      - run: npx prisma migrate deploy
       - run: npm run test:e2e
       - run: npm run build
 

@@ -1,3 +1,5 @@
+x-database-url: &database-url postgres://${POSTGRES_USER:-cupom}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-cupom}
+
 services:
   db:
     image: postgres:17-alpine
@@ -12,6 +14,15 @@ services:
       interval: 5s
       retries: 10
 
+  # Estágio de build da api: tem o CLI do Prisma, que a imagem final não leva.
+  migrate:
+    build: { context: apps/api, target: build }
+    command: npx prisma migrate deploy
+    environment:
+      DATABASE_URL: *database-url
+    depends_on:
+      db: { condition: service_healthy }
+
   ai:
     build: apps/ai
     ports: ["8000:8000"]
@@ -20,11 +31,11 @@ services:
     build: apps/api
     environment:
       PORT: 3000
-      DATABASE_URL: postgres://${POSTGRES_USER:-cupom}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-cupom}
+      DATABASE_URL: *database-url
       AI_URL: http://ai:8000
     ports: ["3001:3000"]
     depends_on:
-      db: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
       ai: { condition: service_started }
 
   web:

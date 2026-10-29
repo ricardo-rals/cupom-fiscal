@@ -1,0 +1,201 @@
+// Campos em snake_case de propósito: são os mesmos nomes que as views e o agente de SQL enxergam.
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ReceiptOrigem {
+  qr
+  foto
+
+  @@map("receipt_origem")
+}
+
+enum ReceiptStatus {
+  rascunho
+  confirmado
+  normalizado
+
+  @@map("receipt_status")
+}
+
+enum NormalizacaoOrigem {
+  llm
+  cache
+  usuario
+
+  @@map("normalizacao_origem")
+}
+
+// Conteúdo do produto sempre convertido para a unidade padrão: 200 g vira 0,2 kg.
+enum UnidadePadrao {
+  kg
+  l
+  un
+
+  @@map("unidade_padrao")
+}
+
+model Store {
+  id       Int       @id @default(autoincrement())
+  cnpj     String    @unique @db.Char(14)
+  nome     String
+  cidade   String?
+  receipts Receipt[]
+
+  @@map("stores")
+}
+
+model Receipt {
+  id           Int           @id @default(autoincrement())
+  store_id     Int
+  store        Store         @relation(fields: [store_id], references: [id])
+  chave_acesso String        @unique @db.Char(44)
+  emitido_em   DateTime      @db.Timestamptz
+  total        Decimal       @db.Decimal(12, 2)
+  desconto     Decimal       @default(0) @db.Decimal(12, 2)
+  acrescimo    Decimal       @default(0) @db.Decimal(12, 2)
+  pagamento    String?
+  origem       ReceiptOrigem
+  status       ReceiptStatus
+  criado_em    DateTime      @default(now()) @db.Timestamptz
+  items        ReceiptItem[]
+
+  @@map("receipts")
+}
+
+model ReceiptItem {
+  id                 Int                @id @default(autoincrement())
+  receipt_id         Int
+  receipt            Receipt            @relation(fields: [receipt_id], references: [id], onDelete: Cascade)
+  codigo             String?
+  descricao_original String
+  quantidade         Decimal            @db.Decimal(12, 4)
+  unidade            String
+  valor_unitario     Decimal            @db.Decimal(14, 4)
+  valor_total        Decimal            @db.Decimal(12, 2)
+  desconto           Decimal            @default(0) @db.Decimal(12, 2)
+  normalization      ItemNormalization?
+
+  @@index([receipt_id])
+  @@map("receipt_items")
+}
+
+model Category {
+  id         Int         @id @default(autoincrement())
+  nome       String      @unique
+  pai_id     Int?
+  pai        Category?   @relation("CategoryTree", fields: [pai_id], references: [id])
+  filhas     Category[]  @relation("CategoryTree")
+  products   Product[]
+  userLabels UserLabel[]
+  forecasts  Forecast[]
+
+  @@map("categories")
+}
+
+model Product {
+  id                 Int                  @id @default(autoincrement())
+  nome_canonico      String
+  marca              String               @default("")
+  conteudo           Decimal              @db.Decimal(12, 4)
+  unidade_padrao     UnidadePadrao
+  category_id        Int
+  category           Category             @relation(fields: [category_id], references: [id])
+  normalizations     ItemNormalization[]
+  normalizationCache NormalizationCache[]
+  userLabels         UserLabel[]
+  forecasts          Forecast[]
+
+  @@unique([nome_canonico, marca, conteudo, unidade_padrao])
+  @@map("products")
+}
+
+model ItemNormalization {
+  receipt_item_id Int                @id
+  receiptItem     ReceiptItem        @relation(fields: [receipt_item_id], references: [id], onDelete: Cascade)
+  product_id      Int?
+  product         Product?           @relation(fields: [product_id], references: [id])
+  confianca       Decimal            @db.Decimal(4, 3)
+  origem          NormalizacaoOrigem
+  llm_call_id     Int?
+  llmCall         LlmCall?           @relation(fields: [llm_call_id], references: [id])
+  prompt_version  String?
+  criado_em       DateTime           @default(now()) @db.Timestamptz
+
+  @@index([product_id])
+  @@map("item_normalizations")
+}
+
+model NormalizationCache {
+  descricao_original String
+  cnpj               String   @db.Char(14)
+  product_id         Int
+  product            Product  @relation(fields: [product_id], references: [id])
+  criado_em          DateTime @default(now()) @db.Timestamptz
+
+  @@id([descricao_original, cnpj])
+  @@map("normalization_cache")
+}
+
+model UserLabel {
+  id                 Int      @id @default(autoincrement())
+  descricao_original String
+  product_id         Int
+  product            Product  @relation(fields: [product_id], references: [id])
+  category_id        Int
+  category           Category @relation(fields: [category_id], references: [id])
+  criado_em          DateTime @default(now()) @db.Timestamptz
+
+  @@map("user_labels")
+}
+
+// Exatamente um entre product_id e category_id: check na migration.
+model Forecast {
+  id              Int       @id @default(autoincrement())
+  product_id      Int?
+  product         Product?  @relation(fields: [product_id], references: [id])
+  category_id     Int?
+  category        Category? @relation(fields: [category_id], references: [id])
+  mes             DateTime  @db.Date
+  previsto        Decimal   @db.Decimal(14, 4)
+  limite_inferior Decimal   @db.Decimal(14, 4)
+  limite_superior Decimal   @db.Decimal(14, 4)
+  modelo          String
+  mae_validacao   Decimal?  @db.Decimal(14, 4)
+  criado_em       DateTime  @default(now()) @db.Timestamptz
+
+  @@map("forecasts")
+}
+
+model IpcaMonthly {
+  mes      DateTime @id @db.Date
+  variacao Decimal  @db.Decimal(6, 4)
+
+  @@map("ipca_monthly")
+}
+
+model LlmCall {
+  id             Int                 @id @default(autoincrement())
+  finalidade     String
+  modelo         String
+  tokens_in      Int
+  tokens_out     Int
+  custo          Decimal             @db.Decimal(12, 6)
+  latencia_ms    Int
+  trace_id       String?
+  criado_em      DateTime            @default(now()) @db.Timestamptz
+  normalizations ItemNormalization[]
+
+  @@map("llm_calls")
+}
+
+model ImportError {
+  id        Int      @id @default(autoincrement())
+  url       String
+  etapa     String
+  mensagem  String
+  criado_em DateTime @default(now()) @db.Timestamptz
+
+  @@map("import_errors")
+}

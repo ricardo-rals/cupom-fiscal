@@ -1,3 +1,4 @@
+import { loadEnv } from 'vite';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
@@ -6,5 +7,6 @@ export default defineConfig({
     globals: true,
     root: './',
     include: ['**/*.e2e-spec.ts'],
+    env: loadEnv('test', process.cwd(), ''),
   },
 });
