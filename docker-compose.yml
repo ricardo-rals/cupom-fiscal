@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cupom}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+      POSTGRES_DB: ${POSTGRES_DB:-cupom}
+    ports: ["5432:5432"]
+    volumes: [db-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      retries: 10
+
+  ai:
+    build: apps/ai
+    ports: ["8000:8000"]
+
+  api:
+    build: apps/api
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgres://${POSTGRES_USER:-cupom}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-cupom}
+      AI_URL: http://ai:8000
+    ports: ["3001:3000"]
+    depends_on:
+      db: { condition: service_healthy }
+      ai: { condition: service_started }
+
+  web:
+    build: apps/web
+    environment:
+      API_URL: http://api:3000
+    ports: ["3000:3000"]
+    depends_on: [api]
+
+volumes:
+  db-data:
