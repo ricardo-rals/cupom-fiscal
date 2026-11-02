@@ -14,3 +14,4 @@ __pycache__/
 !.env.example
 .DS_Store
 *.log
+apps/api/src/generated/

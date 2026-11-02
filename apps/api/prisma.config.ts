@@ -1,4 +1,4 @@
-import { defineConfig, env } from 'prisma/config';
+import { defineConfig } from 'prisma/config';
 
 // Fora do Docker as variáveis vêm de apps/api/.env; no compose e na CI, do ambiente.
 try {
@@ -10,5 +10,6 @@ try {
 export default defineConfig({
   schema: 'prisma/schema.prisma',
   migrations: { path: 'prisma/migrations' },
-  datasource: { url: env('DATABASE_URL') },
+  // O generate roda no build, sem banco; as migrations falham sozinhas se a URL faltar.
+  datasource: { url: process.env.DATABASE_URL ?? '' },
 });

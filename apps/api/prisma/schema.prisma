@@ -1,5 +1,10 @@
 // Campos em snake_case de propósito: são os mesmos nomes que as views e o agente de SQL enxergam.
 
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
 datasource db {
   provider = "postgresql"
 }
