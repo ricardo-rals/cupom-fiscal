@@ -58,10 +58,42 @@ def test_cpf_do_consumidor_nao_sai_do_parser() -> None:
     assert "000.000.000" not in parse_ba(html).model_dump_json()
 
 
-def test_desconto_do_cupom() -> None:
-    linha = '<div id="linhaTotal"><label>Descontos R$:</label><span class="totalNumb">2,50</span></div>'
-    html = HTML.replace('<div id="linhaForma">', linha + '<div id="linhaForma">')
-    assert parse_ba(html).desconto == Decimal("2.50")
+@pytest.mark.parametrize(
+    ("fixture", "cnpj", "qtd", "total", "desconto", "pagamento"),
+    [
+        (
+            "cupom_2",
+            "00776574138182",
+            2,
+            "12.99",
+            "5.99",
+            "3 - Cartão de Crédito",
+        ),
+        (
+            "cupom_3",
+            "46708841001473",
+            1,
+            "39.99",
+            "40.00",
+            "4 - Cartão de Débito",
+        ),
+        # A Sefaz às vezes mostra só o código da forma de pagamento.
+        ("cupom_4", "06626253121102", 2, "16.79", "0", "18"),
+    ],
+)
+def test_outros_cupons_reais(
+    fixture: str, cnpj: str, qtd: int, total: str, desconto: str, pagamento: str
+) -> None:
+    html = (Path(__file__).parent / f"fixtures/nfce_ba/{fixture}.html").read_text(
+        encoding="utf-8"
+    )
+    cupom = parse_ba(html)
+    assert cupom.cnpj == cnpj
+    assert len(cupom.itens) == qtd
+    assert cupom.total == Decimal(total)
+    assert cupom.desconto == Decimal(desconto)
+    assert cupom.pagamento == pagamento
+    assert sum(i.valor_total for i in cupom.itens) - cupom.desconto == cupom.total
 
 
 @pytest.mark.parametrize(

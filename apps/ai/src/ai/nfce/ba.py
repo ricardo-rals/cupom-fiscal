@@ -85,8 +85,8 @@ def parse_ba(html: str) -> Cupom:
             chave_acesso=re.sub(r"\D", "", _texto(doc.css_first(".chave"))),
             itens=itens,
             total=total,
-            # ponytail: rótulos não vistos em cupom real; confirmar com um cupom com desconto.
             desconto=_valor_do_rotulo(linhas, "desconto") or Decimal(0),
+            # ponytail: rótulo não visto em cupom real; confirmar com um cupom com acréscimo.
             acrescimo=_valor_do_rotulo(linhas, "acréscimo") or Decimal(0),
             pagamento=", ".join(pagamentos) or None,
         )
