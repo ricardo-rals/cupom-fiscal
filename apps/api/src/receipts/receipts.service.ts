@@ -1,5 +1,6 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
+import { NormalizationQueue } from '../normalization/normalization.queue.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 interface CupomItem {
@@ -31,7 +32,38 @@ const PADRAO_CPF = /(?<!\d)\d{3}\.?\d{3}\.?\d{3}-?\d{2}(?!\d)/g;
 
 @Injectable()
 export class ReceiptsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly fila: NormalizationQueue,
+  ) {}
+
+  async situacao(id: number) {
+    const receipt = await this.prisma.receipt.findUnique({
+      where: { id },
+      include: { _count: { select: { items: true } } },
+    });
+    if (!receipt) throw new NotFoundException({ erro: 'cupom_nao_encontrado' });
+    const emRevisao = await this.prisma.itemNormalization.count({
+      where: { em_revisao: true, receiptItem: { receipt_id: id } },
+    });
+    return {
+      id: receipt.id,
+      status: receipt.status,
+      itens: receipt._count.items,
+      em_revisao: emRevisao,
+    };
+  }
+
+  /** Foto sai de `rascunho` aqui; repetir em cupom já confirmado não muda nada. */
+  async confirmar(id: number) {
+    const { count } = await this.prisma.receipt.updateMany({
+      where: { id, status: 'rascunho' },
+      data: { status: 'confirmado' },
+    });
+    const situacao = await this.situacao(id);
+    if (count > 0) await this.fila.enfileirar(id);
+    return situacao;
+  }
 
   async importarPorQr(url: string) {
     const cupom = await this.consultarCupom(url);
@@ -40,7 +72,9 @@ export class ReceiptsService {
     if (existente) throw this.jaImportado(existente.id);
 
     try {
-      return await this.salvar(cupom);
+      const salvo = await this.salvar(cupom);
+      await this.fila.enfileirar(salvo.id);
+      return salvo;
     } catch (erro) {
       // Dois envios simultâneos do mesmo cupom: o índice único decide.
       if (erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === 'P2002') {

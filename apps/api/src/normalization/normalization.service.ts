@@ -43,6 +43,18 @@ const canonico = (texto: string) =>
     .replace(/\s+/g, ' ')
     .trim();
 
+export const chaveDeProduto = (produto: {
+  produto: string;
+  marca: string;
+  conteudo: number;
+  unidade_padrao: UnidadePadrao;
+}) => ({
+  nome_canonico: canonico(produto.produto),
+  marca: canonico(produto.marca),
+  conteudo: produto.conteudo.toFixed(4),
+  unidade_padrao: produto.unidade_padrao,
+});
+
 @Injectable()
 export class NormalizationService {
   constructor(private readonly prisma: PrismaService) {}
@@ -153,12 +165,7 @@ export class NormalizationService {
           continue;
         }
 
-        const chave = {
-          nome_canonico: canonico(normalizado.produto),
-          marca: canonico(normalizado.marca),
-          conteudo: normalizado.conteudo.toFixed(4),
-          unidade_padrao: normalizado.unidade_padrao,
-        };
+        const chave = chaveDeProduto(normalizado);
         const produto = await tx.product.upsert({
           where: { nome_canonico_marca_conteudo_unidade_padrao: chave },
           create: { ...chave, category_id: categoryId },

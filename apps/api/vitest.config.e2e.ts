@@ -7,6 +7,8 @@ export default defineConfig({
     globals: true,
     root: './',
     include: ['**/*.e2e-spec.ts'],
-    env: loadEnv('test', process.cwd(), ''),
+    env: { ...loadEnv('test', process.cwd(), ''), NORMALIZACAO_WORKER: 'off' },
+    // Os arquivos dividem o banco e a fila de jobs.
+    fileParallelism: false,
   },
 });
