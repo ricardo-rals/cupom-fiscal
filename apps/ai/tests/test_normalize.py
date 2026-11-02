@@ -2,8 +2,7 @@ import json
 import re
 from pathlib import Path
 
-import anthropic
-import httpx2
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
@@ -33,40 +32,41 @@ def _item(id_: int, **campos: object) -> dict[str, object]:
 VALIDO = json.dumps({"itens": [_item(1), _item(2)]})
 
 
-def _mensagem(texto: str, stop_reason: str = "end_turn") -> httpx2.Response:
-    return httpx2.Response(
+def _mensagem(texto: str, finish_reason: str = "STOP") -> httpx.Response:
+    return httpx.Response(
         200,
         json={
-            "id": "msg_1",
-            "type": "message",
-            "role": "assistant",
-            "model": "claude-haiku-5-5",
-            "content": [{"type": "text", "text": texto}],
-            "stop_reason": stop_reason,
-            "stop_sequence": None,
-            "usage": {"input_tokens": 1000, "output_tokens": 200},
+            "candidates": [
+                {
+                    "content": {
+                        "parts": [
+                            {"text": "pensando", "thought": True},
+                            {"text": texto},
+                        ]
+                    },
+                    "finishReason": finish_reason,
+                }
+            ],
+            "usageMetadata": {
+                "promptTokenCount": 1000,
+                "candidatesTokenCount": 150,
+                "thoughtsTokenCount": 50,
+            },
         },
     )
 
 
 def _cliente(
-    *respostas: httpx2.Response,
-) -> tuple[anthropic.Anthropic, list[dict[str, object]]]:
+    *respostas: httpx.Response,
+) -> tuple[httpx.Client, list[dict[str, object]]]:
     fila = list(respostas)
     enviados: list[dict[str, object]] = []
 
-    def responder(requisicao: httpx2.Request) -> httpx2.Response:
+    def responder(requisicao: httpx.Request) -> httpx.Response:
         enviados.append(json.loads(requisicao.content))
         return fila.pop(0)
 
-    cliente = anthropic.Anthropic(
-        api_key="teste",
-        max_retries=0,
-        http_client=anthropic.DefaultHttpxClient(
-            transport=httpx2.MockTransport(responder)
-        ),
-    )
-    return cliente, enviados
+    return httpx.Client(transport=httpx.MockTransport(responder)), enviados
 
 
 def test_devolve_itens_custo_e_versao_do_prompt() -> None:
@@ -74,24 +74,29 @@ def test_devolve_itens_custo_e_versao_do_prompt() -> None:
     resposta = normalizar(ITENS, [], cliente)
 
     assert [i.id for i in resposta.itens] == [1, 2]
-    assert resposta.prompt_version == "v1"
-    assert resposta.chamada.modelo == "claude-haiku-5-5"
+    assert resposta.prompt_version == "v2"
+    assert resposta.chamada.modelo == "gemini-3.8-flash"
     assert (resposta.chamada.tokens_in, resposta.chamada.tokens_out) == (1000, 200)
-    assert resposta.chamada.custo == "0.000200"
+    assert resposta.chamada.custo == "0.001500"
 
 
-def test_requisicao_usa_haiku_com_saida_estruturada_e_prompt_do_arquivo() -> None:
+def _tokens_saida(resposta: httpx.Response) -> int:
+    uso = resposta.json().get("usageMetadata", {})
+    return uso.get("candidatesTokenCount", 0) + uso.get("thoughtsTokenCount", 0)
+
+
+def test_requisicao_usa_saida_estruturada_e_prompt_do_arquivo() -> None:
     cliente, enviados = _cliente(_mensagem(VALIDO))
     normalizar(ITENS, [], cliente)
 
     corpo = enviados[0]
-    assert corpo["model"] == "claude-haiku-5-5"
-    assert "Você normaliza itens" in str(corpo["system"])
-    saida = corpo["output_config"]
-    assert isinstance(saida, dict)
-    assert saida["effort"] == "low"
-    assert saida["format"]["type"] == "json_schema"
-    assert "Queijos" in json.dumps(saida["format"]["schema"], ensure_ascii=False)
+    assert "Você normaliza itens" in str(corpo["systemInstruction"])
+    assert "Saco de lixo fica em `Limpeza da casa`" in str(corpo["systemInstruction"])
+    config = corpo["generationConfig"]
+    assert isinstance(config, dict)
+    assert config["responseMimeType"] == "application/json"
+    assert config["thinkingConfig"] == {"thinkingLevel": "low"}
+    assert "Queijos" in json.dumps(config["responseSchema"], ensure_ascii=False)
 
 
 @pytest.mark.parametrize(
@@ -104,8 +109,9 @@ def test_requisicao_usa_haiku_com_saida_estruturada_e_prompt_do_arquivo() -> Non
         _mensagem(json.dumps({"itens": [_item(1), _item(2, categoria="Inventada")]})),
         _mensagem(json.dumps({"itens": [_item(1), _item(2, confianca=1.5)]})),
         _mensagem(json.dumps({"itens": [_item(1), _item(2, conteudo=0)]})),
-        _mensagem(VALIDO, stop_reason="refusal"),
-        _mensagem(VALIDO, stop_reason="max_tokens"),
+        _mensagem(VALIDO, finish_reason="SAFETY"),
+        _mensagem(VALIDO, finish_reason="MAX_TOKENS"),
+        httpx.Response(200, json={"promptFeedback": {"blockReason": "SAFETY"}}),
     ],
     ids=[
         "nao-json",
@@ -117,17 +123,18 @@ def test_requisicao_usa_haiku_com_saida_estruturada_e_prompt_do_arquivo() -> Non
         "conteudo-zero",
         "recusa",
         "cortada",
+        "bloqueada",
     ],
 )
 def test_resposta_invalida_e_rejeitada_e_tenta_de_novo(
-    invalida: httpx2.Response,
+    invalida: httpx.Response,
 ) -> None:
     cliente, enviados = _cliente(invalida, _mensagem(VALIDO))
     resposta = normalizar(ITENS, [], cliente)
 
     assert len(enviados) == 2
     assert len(resposta.itens) == 2
-    assert resposta.chamada.tokens_in == 2000  # a tentativa perdida também custa
+    assert resposta.chamada.tokens_out == 200 + _tokens_saida(invalida)
 
 
 def test_desiste_depois_de_duas_novas_tentativas_sem_perder_o_custo() -> None:
@@ -140,9 +147,10 @@ def test_desiste_depois_de_duas_novas_tentativas_sem_perder_o_custo() -> None:
 
 
 def test_erro_da_api_vira_indisponivel() -> None:
-    cliente, _ = _cliente(httpx2.Response(500, json={"type": "error", "error": {}}))
+    cliente, enviados = _cliente(httpx.Response(503, json={"error": {}}))
     with pytest.raises(LlmIndisponivel):
         normalizar(ITENS, [], cliente)
+    assert len(enviados) == 1
 
 
 def _correcao(descricao: str) -> Correcao:
@@ -161,7 +169,7 @@ def test_exemplos_sao_os_parecidos_e_no_maximo_dez_por_item() -> None:
     cliente, enviados = _cliente(_mensagem(VALIDO))
     normalizar(ITENS[:1] + ITENS[1:], [*parecidas, _correcao("ZZZZ QQQQ")], cliente)
 
-    texto = json.dumps(enviados[0]["messages"], ensure_ascii=False)
+    texto = json.dumps(enviados[0]["contents"], ensure_ascii=False)
     assert len(re.findall(r"LOTE\d+", texto)) == 10
     assert "ZZZZ" not in texto
 
@@ -169,7 +177,7 @@ def test_exemplos_sao_os_parecidos_e_no_maximo_dez_por_item() -> None:
 def test_sem_correcoes_nao_ha_bloco_de_exemplos() -> None:
     cliente, enviados = _cliente(_mensagem(VALIDO))
     normalizar(ITENS, [], cliente)
-    assert "Correções" not in json.dumps(enviados[0]["messages"], ensure_ascii=False)
+    assert "Correções" not in json.dumps(enviados[0]["contents"], ensure_ascii=False)
 
 
 def test_categorias_iguais_as_da_migration_da_api() -> None:
@@ -181,7 +189,7 @@ def test_categorias_iguais_as_da_migration_da_api() -> None:
 
 
 def test_endpoint_sem_chave_de_api(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     corpo = {"itens": [{"id": 1, "descricao": "X", "unidade": "UN"}]}
     resposta = TestClient(app).post("/normalize/batch", json=corpo)
     assert (resposta.status_code, resposta.json()["detail"]) == (

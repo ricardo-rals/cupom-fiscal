@@ -3,11 +3,11 @@ import os
 import time
 from pathlib import Path
 
-import anthropic
-from anthropic import transform_schema
+import httpx
 from rapidfuzz import fuzz, process
 
 from ai.normalize.schema import (
+    CATEGORIAS,
     Chamada,
     Correcao,
     ItemEntrada,
@@ -16,15 +16,49 @@ from ai.normalize.schema import (
     SaidaLlm,
 )
 
-MODELO = "claude-haiku-5-5"
-PROMPT_VERSION = "v1"
+MODELO = "gemini-3.8-flash"
+URL = (
+    f"https://generativelanguage.googleapis.com/v1beta/models/{MODELO}:generateContent"
+)
+PROMPT_VERSION = "v2"
 PROMPT = (Path(__file__).parent / "prompts" / f"{PROMPT_VERSION}.md").read_text(
     encoding="utf-8"
 )
-# ponytail: preço fixo do Haiku 5.5 em prompts de até 100K tokens; atualizar se o modelo mudar.
-USD_POR_TOKEN_ENTRADA = 0.10 / 1_000_000
-USD_POR_TOKEN_SAIDA = 0.50 / 1_000_000
+# ponytail: preço pago do Gemini 3.8 Flash até 31/12/2026; dobra para 1,50 e 7,50 em 2027.
+USD_POR_TOKEN_ENTRADA = 0.75 / 1_000_000
+USD_POR_TOKEN_SAIDA = 3.75 / 1_000_000
 TENTATIVAS = 3  # a primeira e até 2 novas, pelo RF04
+TIMEOUT_S = 75.0  # as 3 tentativas cabem nos 240 s que a api espera
+SCHEMA = {
+    "type": "OBJECT",
+    "properties": {
+        "itens": {
+            "type": "ARRAY",
+            "items": {
+                "type": "OBJECT",
+                "properties": {
+                    "id": {"type": "INTEGER"},
+                    "produto": {"type": "STRING"},
+                    "marca": {"type": "STRING"},
+                    "conteudo": {"type": "NUMBER"},
+                    "unidade_padrao": {"type": "STRING", "enum": ["kg", "l", "un"]},
+                    "categoria": {"type": "STRING", "enum": list(CATEGORIAS)},
+                    "confianca": {"type": "NUMBER"},
+                },
+                "required": [
+                    "id",
+                    "produto",
+                    "marca",
+                    "conteudo",
+                    "unidade_padrao",
+                    "categoria",
+                    "confianca",
+                ],
+            },
+        }
+    },
+    "required": ["itens"],
+}
 MAX_EXEMPLOS_POR_ITEM = 10
 SIMILARIDADE_MINIMA = 60
 
@@ -72,15 +106,25 @@ def _validar(texto: str, ids: set[int]) -> list[ItemNormalizado]:
     return itens
 
 
+def _texto(corpo: dict) -> str:
+    """Vazio em recusa ou corte por limite: o conteúdo não é confiável."""
+    candidatos = corpo.get("candidates") or [{}]
+    if candidatos[0].get("finishReason") != "STOP":
+        return ""
+    partes = candidatos[0].get("content", {}).get("parts", [])
+    return "".join(p.get("text", "") for p in partes if not p.get("thought"))
+
+
 def normalizar(
     itens: list[ItemEntrada],
     correcoes: list[Correcao],
-    cliente: anthropic.Anthropic | None = None,
+    cliente: httpx.Client | None = None,
 ) -> NormalizeResponse:
     if cliente is None:
-        if not os.environ.get("ANTHROPIC_API_KEY"):
+        chave = os.environ.get("GEMINI_API_KEY")
+        if not chave:
             raise LlmNaoConfigurado
-        cliente = anthropic.Anthropic(timeout=60.0)
+        cliente = httpx.Client(timeout=TIMEOUT_S, headers={"x-goog-api-key": chave})
 
     conteudo = _mensagem(itens, _exemplos(itens, correcoes))
     ids = {i.id for i in itens}
@@ -90,30 +134,32 @@ def normalizar(
 
     for _ in range(TENTATIVAS):
         try:
-            resposta = cliente.messages.create(
-                model=MODELO,
-                max_tokens=16000,
-                system=PROMPT,
-                messages=[{"role": "user", "content": conteudo}],
-                output_config={
-                    "effort": "low",
-                    "format": {
-                        "type": "json_schema",
-                        "schema": transform_schema(SaidaLlm),
+            resposta = cliente.post(
+                URL,
+                json={
+                    "systemInstruction": {"parts": [{"text": PROMPT}]},
+                    "contents": [{"role": "user", "parts": [{"text": conteudo}]}],
+                    "generationConfig": {
+                        "responseMimeType": "application/json",
+                        "responseSchema": SCHEMA,
+                        "thinkingConfig": {"thinkingLevel": "low"},
                     },
                 },
             )
-        except anthropic.APIError as erro:
-            # O SDK já tentou de novo nos erros temporários; a api agenda outra tentativa.
+            resposta.raise_for_status()
+        except httpx.HTTPError as erro:
+            # A api agenda outra tentativa com intervalo maior, e os lotes prontos ficam salvos.
             raise LlmIndisponivel(type(erro).__name__) from None
 
-        tokens_in += resposta.usage.input_tokens
-        tokens_out += resposta.usage.output_tokens
-        if resposta.stop_reason != "end_turn":
-            continue  # recusa ou corte por max_tokens: o conteúdo não é confiável
-        texto = next((b.text for b in resposta.content if b.type == "text"), "")
+        corpo = resposta.json()
+        uso = corpo.get("usageMetadata", {})
+        tokens_in += uso.get("promptTokenCount", 0)
+        # O raciocínio é cobrado como saída.
+        tokens_out += uso.get("candidatesTokenCount", 0) + uso.get(
+            "thoughtsTokenCount", 0
+        )
         try:
-            normalizados = _validar(texto, ids)
+            normalizados = _validar(_texto(corpo), ids)
             break
         except ValueError:  # inclui ValidationError do Pydantic
             continue
