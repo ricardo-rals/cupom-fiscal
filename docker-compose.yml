@@ -25,6 +25,8 @@ services:
 
   ai:
     build: apps/ai
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     ports: ["8000:8000"]
 
   api:
@@ -33,6 +35,8 @@ services:
       PORT: 3000
       DATABASE_URL: *database-url
       AI_URL: http://ai:8000
+      LLM_LIMITE_MENSAL_USD: ${LLM_LIMITE_MENSAL_USD:-5}
+      NORMALIZACAO_LIMIAR: ${NORMALIZACAO_LIMIAR:-0.8}
     ports: ["3001:3000"]
     depends_on:
       migrate: { condition: service_completed_successfully }

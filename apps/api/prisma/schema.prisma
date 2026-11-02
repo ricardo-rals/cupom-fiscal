@@ -126,6 +126,7 @@ model ItemNormalization {
   llm_call_id     Int?
   llmCall         LlmCall?           @relation(fields: [llm_call_id], references: [id])
   prompt_version  String?
+  em_revisao      Boolean            @default(false)
   criado_em       DateTime           @default(now()) @db.Timestamptz
 
   @@index([product_id])

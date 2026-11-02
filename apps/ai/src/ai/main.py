@@ -4,6 +4,8 @@ from pydantic import BaseModel, Field
 from ai.nfce.ba import LayoutNaoReconhecido
 from ai.nfce.consulta import ConsultaFalhou, UrlNaoPermitida, consultar
 from ai.nfce.schema import Cupom
+from ai.normalize.llm import LlmIndisponivel, LlmNaoConfigurado, normalizar
+from ai.normalize.schema import NormalizeRequest, NormalizeResponse
 
 app = FastAPI(title="cupom-fiscal ai")
 
@@ -27,3 +29,13 @@ def nfce_parse(body: NfceParseRequest) -> Cupom:
         raise HTTPException(502, "consulta_falhou") from None
     except LayoutNaoReconhecido:
         raise HTTPException(422, "layout_nao_reconhecido") from None
+
+
+@app.post("/normalize/batch")
+def normalize_batch(body: NormalizeRequest) -> NormalizeResponse:
+    try:
+        return normalizar(body.itens, body.correcoes)
+    except LlmNaoConfigurado:
+        raise HTTPException(503, "llm_nao_configurado") from None
+    except LlmIndisponivel:
+        raise HTTPException(502, "llm_indisponivel") from None

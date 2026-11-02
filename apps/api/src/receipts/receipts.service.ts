@@ -26,6 +26,8 @@ interface Cupom {
 
 const IMPORTACAO_POR_FOTO = 'importar_por_foto';
 const TIMEOUT_AI_MS = 15_000;
+// A URL vem do usuário e fica gravada quando a importação falha.
+const PADRAO_CPF = /(?<!\d)\d{3}\.?\d{3}\.?\d{3}-?\d{2}(?!\d)/g;
 
 @Injectable()
 export class ReceiptsService {
@@ -77,7 +79,9 @@ export class ReceiptsService {
   }
 
   private async falhaDeImportacao(url: string, etapa: string, mensagem: string, status: number) {
-    await this.prisma.importError.create({ data: { url, etapa, mensagem } });
+    await this.prisma.importError.create({
+      data: { url: url.replace(PADRAO_CPF, '[cpf]'), etapa, mensagem },
+    });
     return new HttpException({ erro: mensagem, sugestao: IMPORTACAO_POR_FOTO }, status);
   }
 
