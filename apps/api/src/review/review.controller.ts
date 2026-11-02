@@ -1,4 +1,12 @@
-import { Body, Controller, Get, HttpCode, Param, ParseIntPipe, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  ParseIntPipe,
+  Post,
+} from '@nestjs/common';
 import { ReviewService } from './review.service.js';
 
 @Controller('review-queue')
@@ -8,6 +16,11 @@ export class ReviewController {
   @Get()
   listar() {
     return this.revisao.listar();
+  }
+
+  @Get('categories')
+  categorias() {
+    return this.revisao.categorias();
   }
 
   @Post(':itemId/resolve')
