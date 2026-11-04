@@ -6,8 +6,9 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
+from ai.gemini import LlmIndisponivel
 from ai.main import app
-from ai.normalize.llm import LlmIndisponivel, normalizar
+from ai.normalize.llm import normalizar
 from ai.normalize.schema import CATEGORIAS, Correcao, ItemEntrada
 
 ITENS = [
@@ -75,7 +76,7 @@ def test_devolve_itens_custo_e_versao_do_prompt() -> None:
 
     assert [i.id for i in resposta.itens] == [1, 2]
     assert resposta.prompt_version == "v2"
-    assert resposta.chamada.modelo == "gemini-3.8-flash"
+    assert resposta.chamada.modelo == "gemini-3.6-flash"
     assert (resposta.chamada.tokens_in, resposta.chamada.tokens_out) == (1000, 200)
     assert resposta.chamada.custo == "0.001500"
 

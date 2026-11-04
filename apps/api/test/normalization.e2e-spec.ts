@@ -17,7 +17,7 @@ interface CorpoEnviado {
 }
 
 const chamada = {
-  modelo: 'gemini-3.8-flash',
+  modelo: 'gemini-3.6-flash',
   tokens_in: 1000,
   tokens_out: 200,
   custo: '0.000200',
@@ -113,7 +113,7 @@ describe('normalização de um cupom', () => {
     );
     await db.query('DELETE FROM stores WHERE cnpj = $1', [CNPJ]);
     await db.query('DELETE FROM products WHERE nome_canonico LIKE $1', [`${MARCADOR_PRODUTO}%`]);
-    await db.query(`DELETE FROM llm_calls WHERE modelo = 'gemini-3.8-flash'`);
+    await db.query(`DELETE FROM llm_calls WHERE modelo = 'gemini-3.6-flash'`);
   };
 
   beforeAll(async () => {
@@ -272,7 +272,7 @@ describe('normalização de um cupom', () => {
   it('limite mensal atingido: não chama o LLM e manda para revisão', async () => {
     await db.query(
       `INSERT INTO llm_calls (finalidade, modelo, tokens_in, tokens_out, custo, latencia_ms)
-       VALUES ('normalizacao', 'gemini-3.8-flash', 1, 1, 6, 1)`,
+       VALUES ('normalizacao', 'gemini-3.6-flash', 1, 1, 6, 1)`,
     );
     const { receiptId, ids } = await criarCupom([`${PREFIXO} LIMITE`]);
     const chamadas = iaResolveTudo();

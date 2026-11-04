@@ -14,6 +14,11 @@ const MENSAGENS: Record<string, string> = {
   item_nao_encontrado: "Item não encontrado.",
   item_fora_da_revisao: "Este item já saiu da fila.",
   item_sem_normalizacao: "Este item ainda está sendo normalizado.",
+  pergunta_invalida: "Escreva uma pergunta de até 500 caracteres.",
+  limite_de_gasto: "O limite mensal de gasto com IA foi atingido.",
+  llm_nao_configurado: "O agente precisa da chave do Gemini no .env.",
+  agente_nao_configurado: "O agente precisa da senha AGENT_RO_PASSWORD no .env.",
+  llm_indisponivel: "O modelo de IA não respondeu. Tente de novo em instantes.",
 };
 
 export class ErroApi extends Error {

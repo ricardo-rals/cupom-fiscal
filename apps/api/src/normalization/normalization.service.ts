@@ -55,6 +55,20 @@ export const chaveDeProduto = (produto: {
   unidade_padrao: produto.unidade_padrao,
 });
 
+/** Vale para todo uso de LLM no mês: normalização e agente somam no mesmo limite. */
+export async function limiteDeGastoAtingido(prisma: PrismaService) {
+  const limite = Number(process.env.LLM_LIMITE_MENSAL_USD ?? 5);
+  const agora = new Date();
+  const inicioDoMes = new Date(
+    Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), 1),
+  );
+  const { _sum } = await prisma.llmCall.aggregate({
+    where: { criado_em: { gte: inicioDoMes } },
+    _sum: { custo: true },
+  });
+  return Number(_sum.custo ?? 0) >= limite;
+}
+
 @Injectable()
 export class NormalizationService {
   constructor(private readonly prisma: PrismaService) {}
@@ -97,7 +111,10 @@ export class NormalizationService {
         ? null
         : await this.prisma.normalizationCache.findUnique({
             where: {
-              descricao_original_cnpj: { descricao_original: item.descricao_original, cnpj },
+              descricao_original_cnpj: {
+                descricao_original: item.descricao_original,
+                cnpj,
+              },
             },
           });
       const productId = correcao?.product_id ?? cache?.product_id;
@@ -131,8 +148,13 @@ export class NormalizationService {
     }));
   }
 
-  private async normalizarLote(lote: ItemPendente[], correcoes: unknown[], cnpj: string) {
-    if (await this.limiteDeGastoAtingido()) return this.enviarParaRevisao(lote);
+  private async normalizarLote(
+    lote: ItemPendente[],
+    correcoes: unknown[],
+    cnpj: string,
+  ) {
+    if (await limiteDeGastoAtingido(this.prisma))
+      return this.enviarParaRevisao(lote);
 
     const resposta = await this.chamarIa(lote, correcoes);
     if (resposta === 'sem_llm') return this.enviarParaRevisao(lote);
@@ -147,7 +169,10 @@ export class NormalizationService {
       const chamada = await tx.llmCall.create({
         data: { finalidade: FINALIDADE, ...resposta.chamada },
       });
-      const comum = { llm_call_id: chamada.id, prompt_version: resposta.prompt_version };
+      const comum = {
+        llm_call_id: chamada.id,
+        prompt_version: resposta.prompt_version,
+      };
 
       for (const item of lote) {
         const normalizado = porId.get(item.id);
@@ -195,17 +220,6 @@ export class NormalizationService {
     });
   }
 
-  private async limiteDeGastoAtingido() {
-    const limite = Number(process.env.LLM_LIMITE_MENSAL_USD ?? 5);
-    const agora = new Date();
-    const inicioDoMes = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), 1));
-    const { _sum } = await this.prisma.llmCall.aggregate({
-      where: { criado_em: { gte: inicioDoMes } },
-      _sum: { custo: true },
-    });
-    return Number(_sum.custo ?? 0) >= limite;
-  }
-
   private async chamarIa(lote: ItemPendente[], correcoes: unknown[]) {
     let resposta: Response;
     try {
@@ -226,7 +240,8 @@ export class NormalizationService {
       throw new ServiceUnavailableException({ erro: 'ai_indisponivel' });
     }
     if (resposta.status === 503) return 'sem_llm' as const;
-    if (!resposta.ok) throw new ServiceUnavailableException({ erro: 'llm_indisponivel' });
+    if (!resposta.ok)
+      throw new ServiceUnavailableException({ erro: 'llm_indisponivel' });
     return (await resposta.json()) as RespostaIa;
   }
 

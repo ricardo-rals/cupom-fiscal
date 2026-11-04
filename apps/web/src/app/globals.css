@@ -140,3 +140,40 @@ body {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+
+.linha-prevista {
+  stroke-dasharray: 5 4;
+}
+
+.faixa {
+  fill: var(--serie);
+  opacity: 0.15;
+}
+
+.marca-prevista {
+  fill: var(--background);
+  stroke: var(--serie);
+  stroke-width: 2;
+}
+
+/* O selo tem texto e forma, nunca só cor. */
+.selo {
+  display: inline-block;
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  padding: 0.125rem 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.selo-alta::before {
+  content: "●●● ";
+}
+
+.selo-media::before {
+  content: "●●○ ";
+}
+
+.selo-baixa::before {
+  content: "●○○ ";
+}

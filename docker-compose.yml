@@ -27,6 +27,8 @@ services:
     build: apps/ai
     environment:
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      # Só o agente usa: papel que lê as três views e nada mais.
+      AGENT_DATABASE_URL: postgres://agent_ro:${AGENT_RO_PASSWORD:-}@db:5432/${POSTGRES_DB:-cupom}
     ports: ["8000:8000"]
 
   api:
@@ -37,6 +39,7 @@ services:
       AI_URL: http://ai:8000
       LLM_LIMITE_MENSAL_USD: ${LLM_LIMITE_MENSAL_USD:-5}
       NORMALIZACAO_LIMIAR: ${NORMALIZACAO_LIMIAR:-0.8}
+      AGENT_RO_PASSWORD: ${AGENT_RO_PASSWORD:-}
     ports: ["3001:3000"]
     depends_on:
       migrate: { condition: service_completed_successfully }

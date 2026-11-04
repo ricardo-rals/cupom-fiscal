@@ -1,0 +1,1926 @@
+{
+ "modelo": "gemini-3.6-flash",
+ "prompt_version": "v2",
+ "lotes": {
+  "0": {
+   "itens": [
+    {
+     "id": 0,
+     "produto": "Panetone com gotas de chocolate",
+     "marca": "Casa Suíça",
+     "conteudo": 0.4,
+     "unidade_padrao": "kg",
+     "categoria": "Bolos e panetones",
+     "confianca": 1.0
+    },
+    {
+     "id": 1,
+     "produto": "Mandioca descascada",
+     "marca": "",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Legumes e verduras",
+     "confianca": 1.0
+    },
+    {
+     "id": 2,
+     "produto": "Queijo mussarela fatiado",
+     "marca": "Lactoplasa Glória",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Queijos",
+     "confianca": 0.9
+    },
+    {
+     "id": 3,
+     "produto": "Presunto fatiado",
+     "marca": "Sadia",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Frios e embutidos",
+     "confianca": 1.0
+    },
+    {
+     "id": 4,
+     "produto": "Moela de frango",
+     "marca": "Avigro",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Aves",
+     "confianca": 1.0
+    },
+    {
+     "id": 5,
+     "produto": "Filé de peito de frango",
+     "marca": "Avigro",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Aves",
+     "confianca": 1.0
+    },
+    {
+     "id": 6,
+     "produto": "Pizza de bacon",
+     "marca": "Seara",
+     "conteudo": 0.25,
+     "unidade_padrao": "kg",
+     "categoria": "Pizzas e pratos prontos",
+     "confianca": 1.0
+    },
+    {
+     "id": 7,
+     "produto": "Batata",
+     "marca": "",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Legumes e verduras",
+     "confianca": 1.0
+    },
+    {
+     "id": 8,
+     "produto": "Limão tahiti",
+     "marca": "",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Frutas",
+     "confianca": 1.0
+    },
+    {
+     "id": 9,
+     "produto": "Goiaba vermelha",
+     "marca": "",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Frutas",
+     "confianca": 1.0
+    },
+    {
+     "id": 10,
+     "produto": "Tomate longa vida",
+     "marca": "",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Legumes e verduras",
+     "confianca": 1.0
+    },
+    {
+     "id": 11,
+     "produto": "Linguiça calabresa",
+     "marca": "Perdigão",
+     "conteudo": 0.4,
+     "unidade_padrao": "kg",
+     "categoria": "Frios e embutidos",
+     "confianca": 1.0
+    },
+    {
+     "id": 12,
+     "produto": "Requeijão tradicional",
+     "marca": "Betânia",
+     "conteudo": 0.4,
+     "unidade_padrao": "kg",
+     "categoria": "Manteiga, requeijão e creme de leite",
+     "confianca": 1.0
+    },
+    {
+     "id": 13,
+     "produto": "Leite longa vida integral",
+     "marca": "Natville",
+     "conteudo": 1.0,
+     "unidade_padrao": "l",
+     "categoria": "Leite",
+     "confianca": 1.0
+    },
+    {
+     "id": 14,
+     "produto": "Feijão carioca",
+     "marca": "Tá na Mesa",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Arroz e feijão",
+     "confianca": 1.0
+    },
+    {
+     "id": 15,
+     "produto": "Feijão preto",
+     "marca": "Rubi",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Arroz e feijão",
+     "confianca": 1.0
+    },
+    {
+     "id": 16,
+     "produto": "Arroz parboilizado",
+     "marca": "Chinês",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Arroz e feijão",
+     "confianca": 1.0
+    },
+    {
+     "id": 17,
+     "produto": "Macarrão sêmola parafuso",
+     "marca": "Vitarella",
+     "conteudo": 0.4,
+     "unidade_padrao": "kg",
+     "categoria": "Massas",
+     "confianca": 1.0
+    },
+    {
+     "id": 18,
+     "produto": "Molho de tomate tradicional",
+     "marca": "Bonare",
+     "conteudo": 0.3,
+     "unidade_padrao": "kg",
+     "categoria": "Molhos e temperos",
+     "confianca": 1.0
+    },
+    {
+     "id": 19,
+     "produto": "Milho verde",
+     "marca": "Fugini",
+     "conteudo": 0.17,
+     "unidade_padrao": "kg",
+     "categoria": "Enlatados e conservas",
+     "confianca": 1.0
+    }
+   ],
+   "chamada": {
+    "modelo": "gemini-3.6-flash",
+    "tokens_in": 1192,
+    "tokens_out": 1248,
+    "custo": "0.005574",
+    "latencia_ms": 7328
+   },
+   "prompt_version": "v2"
+  },
+  "20": {
+   "itens": [
+    {
+     "id": 20,
+     "produto": "Café em Pó Tradicional",
+     "marca": "Bom Jesus",
+     "conteudo": 0.25,
+     "unidade_padrao": "kg",
+     "categoria": "Café e chá",
+     "confianca": 0.95
+    },
+    {
+     "id": 21,
+     "produto": "Milho de Pipoca",
+     "marca": "Dona Clara",
+     "conteudo": 0.4,
+     "unidade_padrao": "kg",
+     "categoria": "Cereais, grãos e farinhas",
+     "confianca": 0.95
+    },
+    {
+     "id": 22,
+     "produto": "Chocolate Bis Ao Leite",
+     "marca": "Bis",
+     "conteudo": 0.1008,
+     "unidade_padrao": "kg",
+     "categoria": "Chocolates e doces",
+     "confianca": 0.95
+    },
+    {
+     "id": 23,
+     "produto": "Refresco em Pó de Morango",
+     "marca": "Tang",
+     "conteudo": 0.018,
+     "unidade_padrao": "kg",
+     "categoria": "Sucos e refrescos",
+     "confianca": 0.95
+    },
+    {
+     "id": 24,
+     "produto": "Refresco em Pó de Laranja e Acerola",
+     "marca": "Frisco",
+     "conteudo": 0.018,
+     "unidade_padrao": "kg",
+     "categoria": "Sucos e refrescos",
+     "confianca": 0.95
+    },
+    {
+     "id": 25,
+     "produto": "Refresco em Pó de Laranja e Mamão",
+     "marca": "Tang",
+     "conteudo": 0.018,
+     "unidade_padrao": "kg",
+     "categoria": "Sucos e refrescos",
+     "confianca": 0.95
+    },
+    {
+     "id": 26,
+     "produto": "Bebida Láctea de Chocolate",
+     "marca": "Toddynho",
+     "conteudo": 0.2,
+     "unidade_padrao": "l",
+     "categoria": "Iogurtes e bebidas lácteas",
+     "confianca": 0.95
+    },
+    {
+     "id": 27,
+     "produto": "Creme de Leite",
+     "marca": "Piracanjuba",
+     "conteudo": 0.2,
+     "unidade_padrao": "kg",
+     "categoria": "Manteiga, requeijão e creme de leite",
+     "confianca": 0.95
+    },
+    {
+     "id": 28,
+     "produto": "Suco de Pêssego Pronto",
+     "marca": "Maratá",
+     "conteudo": 0.2,
+     "unidade_padrao": "l",
+     "categoria": "Sucos e refrescos",
+     "confianca": 0.95
+    },
+    {
+     "id": 29,
+     "produto": "Suco de Goiaba Pronto",
+     "marca": "D+",
+     "conteudo": 0.2,
+     "unidade_padrao": "l",
+     "categoria": "Sucos e refrescos",
+     "confianca": 0.95
+    },
+    {
+     "id": 30,
+     "produto": "Suco de Maracujá Pronto",
+     "marca": "D+",
+     "conteudo": 0.2,
+     "unidade_padrao": "l",
+     "categoria": "Sucos e refrescos",
+     "confianca": 0.95
+    },
+    {
+     "id": 31,
+     "produto": "Molho de Pimenta Cremoso Tradicional",
+     "marca": "Bahia Premium",
+     "conteudo": 0.22,
+     "unidade_padrao": "l",
+     "categoria": "Molhos e temperos",
+     "confianca": 0.9
+    },
+    {
+     "id": 32,
+     "produto": "Pão de Forma Tradicional",
+     "marca": "Limiar",
+     "conteudo": 0.4,
+     "unidade_padrao": "kg",
+     "categoria": "Pães",
+     "confianca": 0.95
+    },
+    {
+     "id": 33,
+     "produto": "Azeite de Oliva Português Tipo Único",
+     "marca": "Gallo",
+     "conteudo": 0.5,
+     "unidade_padrao": "l",
+     "categoria": "Óleos, azeites e vinagres",
+     "confianca": 0.95
+    },
+    {
+     "id": 34,
+     "produto": "Óleo de Algodão",
+     "marca": "Liza",
+     "conteudo": 0.9,
+     "unidade_padrao": "l",
+     "categoria": "Óleos, azeites e vinagres",
+     "confianca": 0.95
+    },
+    {
+     "id": 35,
+     "produto": "Bisnaguinha",
+     "marca": "Bauducco",
+     "conteudo": 0.26,
+     "unidade_padrao": "kg",
+     "categoria": "Pães",
+     "confianca": 0.95
+    },
+    {
+     "id": 36,
+     "produto": "Pão de Queijo Tradicional",
+     "marca": "",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Pães",
+     "confianca": 0.9
+    },
+    {
+     "id": 37,
+     "produto": "Vinagre de Álcool",
+     "marca": "Maratá",
+     "conteudo": 0.75,
+     "unidade_padrao": "l",
+     "categoria": "Óleos, azeites e vinagres",
+     "confianca": 0.95
+    },
+    {
+     "id": 38,
+     "produto": "Toalha de Papel",
+     "marca": "Kitchen",
+     "conteudo": 3.0,
+     "unidade_padrao": "un",
+     "categoria": "Papéis e descartáveis",
+     "confianca": 0.95
+    },
+    {
+     "id": 39,
+     "produto": "Pano de Limpeza",
+     "marca": "Scott Duramax",
+     "conteudo": 58.0,
+     "unidade_padrao": "un",
+     "categoria": "Limpeza da casa",
+     "confianca": 0.95
+    }
+   ],
+   "chamada": {
+    "modelo": "gemini-3.6-flash",
+    "tokens_in": 1260,
+    "tokens_out": 1353,
+    "custo": "0.006019",
+    "latencia_ms": 6360
+   },
+   "prompt_version": "v2"
+  },
+  "40": {
+   "itens": [
+    {
+     "id": 40,
+     "produto": "Desinfetante",
+     "marca": "Pinho Sol",
+     "conteudo": 1.75,
+     "unidade_padrao": "l",
+     "categoria": "Limpeza da casa",
+     "confianca": 1.0
+    },
+    {
+     "id": 41,
+     "produto": "Detergente líquido clear",
+     "marca": "Teiú",
+     "conteudo": 0.5,
+     "unidade_padrao": "l",
+     "categoria": "Louça",
+     "confianca": 0.95
+    },
+    {
+     "id": 42,
+     "produto": "Desodorante gel feminino algodão",
+     "marca": "Secret",
+     "conteudo": 0.045,
+     "unidade_padrao": "kg",
+     "categoria": "Desodorantes",
+     "confianca": 0.95
+    },
+    {
+     "id": 43,
+     "produto": "Saco de lixo reforçado preto",
+     "marca": "Embalixo",
+     "conteudo": 15.0,
+     "unidade_padrao": "un",
+     "categoria": "Limpeza da casa",
+     "confianca": 0.95
+    },
+    {
+     "id": 44,
+     "produto": "Bacon manta",
+     "marca": "Perdigão",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Frios e embutidos",
+     "confianca": 0.95
+    },
+    {
+     "id": 45,
+     "produto": "Chocolate Laka Oreo",
+     "marca": "Lacta",
+     "conteudo": 0.08,
+     "unidade_padrao": "kg",
+     "categoria": "Chocolates e doces",
+     "confianca": 1.0
+    },
+    {
+     "id": 46,
+     "produto": "Chocolate Ouro Branco",
+     "marca": "Lacta",
+     "conteudo": 0.098,
+     "unidade_padrao": "kg",
+     "categoria": "Chocolates e doces",
+     "confianca": 1.0
+    },
+    {
+     "id": 47,
+     "produto": "Sacola retornável sortida",
+     "marca": "",
+     "conteudo": 1.0,
+     "unidade_padrao": "un",
+     "categoria": "Diversos",
+     "confianca": 0.9
+    },
+    {
+     "id": 48,
+     "produto": "Linguiça de frango para churrasco",
+     "marca": "Avigro",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Frios e embutidos",
+     "confianca": 0.95
+    },
+    {
+     "id": 49,
+     "produto": "Queijo prato fatiado",
+     "marca": "Davaca",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Queijos",
+     "confianca": 0.95
+    },
+    {
+     "id": 50,
+     "produto": "Levíssimo fatiado",
+     "marca": "Seara",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Frios e embutidos",
+     "confianca": 0.95
+    },
+    {
+     "id": 51,
+     "produto": "Carne bovina paleta resfriada",
+     "marca": "",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Carne bovina",
+     "confianca": 0.95
+    },
+    {
+     "id": 52,
+     "produto": "Batata fininhas",
+     "marca": "Bem Brasil",
+     "conteudo": 1.5,
+     "unidade_padrao": "kg",
+     "categoria": "Pizzas e pratos prontos",
+     "confianca": 0.9
+    },
+    {
+     "id": 53,
+     "produto": "Cerveja Lager puro malte",
+     "marca": "Praya",
+     "conteudo": 0.355,
+     "unidade_padrao": "l",
+     "categoria": "Bebidas alcoólicas",
+     "confianca": 1.0
+    },
+    {
+     "id": 54,
+     "produto": "Salgadinho",
+     "marca": "Cebolitos",
+     "conteudo": 0.021,
+     "unidade_padrao": "kg",
+     "categoria": "Salgadinhos",
+     "confianca": 1.0
+    },
+    {
+     "id": 55,
+     "produto": "Batata palha extra fina",
+     "marca": "Fritop",
+     "conteudo": 0.1,
+     "unidade_padrao": "kg",
+     "categoria": "Salgadinhos",
+     "confianca": 0.95
+    },
+    {
+     "id": 56,
+     "produto": "Pão de forma integral",
+     "marca": "Limiar",
+     "conteudo": 0.4,
+     "unidade_padrao": "kg",
+     "categoria": "Pães",
+     "confianca": 0.95
+    },
+    {
+     "id": 57,
+     "produto": "Sorvete creme",
+     "marca": "Nobrelli",
+     "conteudo": 1.3,
+     "unidade_padrao": "l",
+     "categoria": "Sorvetes",
+     "confianca": 0.95
+    },
+    {
+     "id": 58,
+     "produto": "Creme de leite",
+     "marca": "Italac",
+     "conteudo": 0.2,
+     "unidade_padrao": "kg",
+     "categoria": "Manteiga, requeijão e creme de leite",
+     "confianca": 1.0
+    },
+    {
+     "id": 59,
+     "produto": "Mostarda escura",
+     "marca": "Heinz",
+     "conteudo": 0.235,
+     "unidade_padrao": "kg",
+     "categoria": "Molhos e temperos",
+     "confianca": 1.0
+    }
+   ],
+   "chamada": {
+    "modelo": "gemini-3.6-flash",
+    "tokens_in": 1234,
+    "tokens_out": 1295,
+    "custo": "0.005782",
+    "latencia_ms": 6125
+   },
+   "prompt_version": "v2"
+  },
+  "60": {
+   "itens": [
+    {
+     "id": 60,
+     "produto": "Papel alumínio",
+     "marca": "Boreda",
+     "conteudo": 1.0,
+     "unidade_padrao": "un",
+     "categoria": "Papéis e descartáveis",
+     "confianca": 0.95
+    },
+    {
+     "id": 61,
+     "produto": "Barra de proteína",
+     "marca": "Ovomaltine",
+     "conteudo": 0.045,
+     "unidade_padrao": "kg",
+     "categoria": "Chocolates e doces",
+     "confianca": 0.9
+    },
+    {
+     "id": 62,
+     "produto": "Cappuccino caramelo",
+     "marca": "",
+     "conteudo": 0.0196,
+     "unidade_padrao": "kg",
+     "categoria": "Café e chá",
+     "confianca": 0.85
+    },
+    {
+     "id": 63,
+     "produto": "Cappuccino dubai chocolate",
+     "marca": "",
+     "conteudo": 0.0196,
+     "unidade_padrao": "kg",
+     "categoria": "Café e chá",
+     "confianca": 0.85
+    },
+    {
+     "id": 64,
+     "produto": "Cappuccino chocolate",
+     "marca": "",
+     "conteudo": 0.0196,
+     "unidade_padrao": "kg",
+     "categoria": "Café e chá",
+     "confianca": 0.85
+    },
+    {
+     "id": 65,
+     "produto": "Cappuccino baunilha",
+     "marca": "",
+     "conteudo": 0.0196,
+     "unidade_padrao": "kg",
+     "categoria": "Café e chá",
+     "confianca": 0.85
+    },
+    {
+     "id": 66,
+     "produto": "Chocolate wafer slim chocolate",
+     "marca": "Trento",
+     "conteudo": 0.02,
+     "unidade_padrao": "kg",
+     "categoria": "Chocolates e doces",
+     "confianca": 0.95
+    },
+    {
+     "id": 67,
+     "produto": "Chocolate branco",
+     "marca": "Bis",
+     "conteudo": 0.063,
+     "unidade_padrao": "kg",
+     "categoria": "Chocolates e doces",
+     "confianca": 0.95
+    },
+    {
+     "id": 68,
+     "produto": "Biscoito chocobiscuit meio amargo",
+     "marca": "Bauducco",
+     "conteudo": 0.08,
+     "unidade_padrao": "kg",
+     "categoria": "Biscoitos",
+     "confianca": 0.95
+    },
+    {
+     "id": 69,
+     "produto": "Biscoito chocobiscuit ao leite",
+     "marca": "Bauducco",
+     "conteudo": 0.08,
+     "unidade_padrao": "kg",
+     "categoria": "Biscoitos",
+     "confianca": 0.95
+    },
+    {
+     "id": 70,
+     "produto": "Leite em pó integral",
+     "marca": "Ninho",
+     "conteudo": 0.38,
+     "unidade_padrao": "kg",
+     "categoria": "Leite",
+     "confianca": 0.95
+    },
+    {
+     "id": 71,
+     "produto": "Molho de tomate com pedaços tradicional",
+     "marca": "Heinz",
+     "conteudo": 0.24,
+     "unidade_padrao": "kg",
+     "categoria": "Molhos e temperos",
+     "confianca": 0.95
+    },
+    {
+     "id": 72,
+     "produto": "Doce de leite com chocolate",
+     "marca": "Souvenir",
+     "conteudo": 0.4,
+     "unidade_padrao": "kg",
+     "categoria": "Chocolates e doces",
+     "confianca": 0.95
+    },
+    {
+     "id": 73,
+     "produto": "Doce de leite tradicional",
+     "marca": "Souvenir",
+     "conteudo": 0.4,
+     "unidade_padrao": "kg",
+     "categoria": "Chocolates e doces",
+     "confianca": 0.95
+    },
+    {
+     "id": 74,
+     "produto": "Bolo de chocolate com brigadeiro",
+     "marca": "",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Bolos e panetones",
+     "confianca": 0.9
+    },
+    {
+     "id": 75,
+     "produto": "Arroz parboilizado tipo 1",
+     "marca": "Urbano",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Arroz e feijão",
+     "confianca": 0.95
+    },
+    {
+     "id": 76,
+     "produto": "Refrigerante guaraná zero",
+     "marca": "Antarctica",
+     "conteudo": 0.35,
+     "unidade_padrao": "l",
+     "categoria": "Refrigerantes",
+     "confianca": 0.95
+    },
+    {
+     "id": 77,
+     "produto": "Guardanapo folhas simples",
+     "marca": "Sulleg",
+     "conteudo": 50.0,
+     "unidade_padrao": "un",
+     "categoria": "Papéis e descartáveis",
+     "confianca": 0.95
+    },
+    {
+     "id": 78,
+     "produto": "Toalha de papel",
+     "marca": "Social Clean",
+     "conteudo": 2.0,
+     "unidade_padrao": "un",
+     "categoria": "Papéis e descartáveis",
+     "confianca": 0.95
+    },
+    {
+     "id": 79,
+     "produto": "Tábua tipo bambu",
+     "marca": "Em Casa Tem",
+     "conteudo": 1.0,
+     "unidade_padrao": "un",
+     "categoria": "Diversos",
+     "confianca": 0.9
+    }
+   ],
+   "chamada": {
+    "modelo": "gemini-3.6-flash",
+    "tokens_in": 1297,
+    "tokens_out": 1295,
+    "custo": "0.005829",
+    "latencia_ms": 6359
+   },
+   "prompt_version": "v2"
+  },
+  "80": {
+   "itens": [
+    {
+     "id": 80,
+     "produto": "carteira de couro",
+     "marca": "",
+     "conteudo": 1.0,
+     "unidade_padrao": "un",
+     "categoria": "Diversos",
+     "confianca": 0.8
+    },
+    {
+     "id": 81,
+     "produto": "anel de cebola",
+     "marca": "Bem Brasil",
+     "conteudo": 0.4,
+     "unidade_padrao": "kg",
+     "categoria": "Pizzas e pratos prontos",
+     "confianca": 0.95
+    },
+    {
+     "id": 82,
+     "produto": "carne bovina patinho traseiro resfriado",
+     "marca": "",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Carne bovina",
+     "confianca": 0.95
+    },
+    {
+     "id": 83,
+     "produto": "presunto fatiado",
+     "marca": "Seara",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Frios e embutidos",
+     "confianca": 0.95
+    },
+    {
+     "id": 84,
+     "produto": "queijo mussarela fatiado",
+     "marca": "Betânia",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Queijos",
+     "confianca": 0.95
+    },
+    {
+     "id": 85,
+     "produto": "batata palito airfryer",
+     "marca": "Bem Brasil",
+     "conteudo": 0.7,
+     "unidade_padrao": "kg",
+     "categoria": "Pizzas e pratos prontos",
+     "confianca": 0.95
+    },
+    {
+     "id": 86,
+     "produto": "morango e amora congelados",
+     "marca": "Original Food",
+     "conteudo": 1.02,
+     "unidade_padrao": "kg",
+     "categoria": "Frutas",
+     "confianca": 0.95
+    },
+    {
+     "id": 87,
+     "produto": "leite fermentado morango Bob Esponja",
+     "marca": "",
+     "conteudo": 0.48,
+     "unidade_padrao": "kg",
+     "categoria": "Iogurtes e bebidas lácteas",
+     "confianca": 0.9
+    },
+    {
+     "id": 88,
+     "produto": "leite fermentado tradicional Bob Esponja",
+     "marca": "",
+     "conteudo": 0.48,
+     "unidade_padrao": "kg",
+     "categoria": "Iogurtes e bebidas lácteas",
+     "confianca": 0.9
+    },
+    {
+     "id": 89,
+     "produto": "manteiga com sal",
+     "marca": "DaVaca",
+     "conteudo": 0.2,
+     "unidade_padrao": "kg",
+     "categoria": "Manteiga, requeijão e creme de leite",
+     "confianca": 0.95
+    },
+    {
+     "id": 90,
+     "produto": "cebola amarela",
+     "marca": "",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Legumes e verduras",
+     "confianca": 0.95
+    },
+    {
+     "id": 91,
+     "produto": "cenoura",
+     "marca": "",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Legumes e verduras",
+     "confianca": 0.95
+    },
+    {
+     "id": 92,
+     "produto": "milho verde",
+     "marca": "",
+     "conteudo": 1.0,
+     "unidade_padrao": "un",
+     "categoria": "Legumes e verduras",
+     "confianca": 0.95
+    },
+    {
+     "id": 93,
+     "produto": "macarrão instantâneo galinha caipira",
+     "marca": "Nissin Lamen",
+     "conteudo": 0.085,
+     "unidade_padrao": "kg",
+     "categoria": "Massas",
+     "confianca": 0.95
+    },
+    {
+     "id": 94,
+     "produto": "maionese",
+     "marca": "Hellmann's",
+     "conteudo": 0.4,
+     "unidade_padrao": "kg",
+     "categoria": "Molhos e temperos",
+     "confianca": 0.95
+    },
+    {
+     "id": 95,
+     "produto": "sardinha em molho de tomate",
+     "marca": "Gomes da Costa",
+     "conteudo": 0.125,
+     "unidade_padrao": "kg",
+     "categoria": "Enlatados e conservas",
+     "confianca": 0.95
+    },
+    {
+     "id": 96,
+     "produto": "azeitona verde com caroço",
+     "marca": "Gallo",
+     "conteudo": 0.18,
+     "unidade_padrao": "kg",
+     "categoria": "Enlatados e conservas",
+     "confianca": 0.95
+    },
+    {
+     "id": 97,
+     "produto": "alho frito",
+     "marca": "Neresco",
+     "conteudo": 0.02,
+     "unidade_padrao": "kg",
+     "categoria": "Molhos e temperos",
+     "confianca": 0.95
+    },
+    {
+     "id": 98,
+     "produto": "cappuccino chocolate",
+     "marca": "3 Corações",
+     "conteudo": 0.02,
+     "unidade_padrao": "kg",
+     "categoria": "Café e chá",
+     "confianca": 0.95
+    },
+    {
+     "id": 99,
+     "produto": "enxaguante bucal cool mint hortelã",
+     "marca": "Listerine",
+     "conteudo": 0.25,
+     "unidade_padrao": "l",
+     "categoria": "Higiene bucal",
+     "confianca": 0.95
+    }
+   ],
+   "chamada": {
+    "modelo": "gemini-3.6-flash",
+    "tokens_in": 1218,
+    "tokens_out": 1019,
+    "custo": "0.004735",
+    "latencia_ms": 12203
+   },
+   "prompt_version": "v2"
+  },
+  "100": {
+   "itens": [
+    {
+     "id": 100,
+     "produto": "Páprica picante",
+     "marca": "Neresco",
+     "conteudo": 0.02,
+     "unidade_padrao": "kg",
+     "categoria": "Molhos e temperos",
+     "confianca": 1.0
+    },
+    {
+     "id": 101,
+     "produto": "Macarrão de sêmola parafuso",
+     "marca": "Brandini",
+     "conteudo": 0.5,
+     "unidade_padrao": "kg",
+     "categoria": "Massas",
+     "confianca": 1.0
+    },
+    {
+     "id": 102,
+     "produto": "Massa para rap 10 tradicional",
+     "marca": "Pullman",
+     "conteudo": 0.297,
+     "unidade_padrao": "kg",
+     "categoria": "Pães",
+     "confianca": 1.0
+    },
+    {
+     "id": 103,
+     "produto": "Refrigerante sem açúcar",
+     "marca": "Coca Cola",
+     "conteudo": 1.5,
+     "unidade_padrao": "l",
+     "categoria": "Refrigerantes",
+     "confianca": 1.0
+    },
+    {
+     "id": 104,
+     "produto": "Cerveja unfiltered",
+     "marca": "Eisenbahn",
+     "conteudo": 0.35,
+     "unidade_padrao": "l",
+     "categoria": "Bebidas alcoólicas",
+     "confianca": 1.0
+    },
+    {
+     "id": 105,
+     "produto": "Milho verde em sachê",
+     "marca": "Quero",
+     "conteudo": 0.17,
+     "unidade_padrao": "kg",
+     "categoria": "Enlatados e conservas",
+     "confianca": 1.0
+    },
+    {
+     "id": 106,
+     "produto": "Café gourmet mogiana paulista",
+     "marca": "3 Corações",
+     "conteudo": 0.25,
+     "unidade_padrao": "kg",
+     "categoria": "Café e chá",
+     "confianca": 1.0
+    },
+    {
+     "id": 107,
+     "produto": "Flocão de milho",
+     "marca": "Maratá",
+     "conteudo": 0.5,
+     "unidade_padrao": "kg",
+     "categoria": "Cereais, grãos e farinhas",
+     "confianca": 1.0
+    },
+    {
+     "id": 108,
+     "produto": "Cappuccino baunilha",
+     "marca": "3 Corações",
+     "conteudo": 0.02,
+     "unidade_padrao": "kg",
+     "categoria": "Café e chá",
+     "confianca": 1.0
+    },
+    {
+     "id": 109,
+     "produto": "Páprica doce",
+     "marca": "Neresco",
+     "conteudo": 0.015,
+     "unidade_padrao": "kg",
+     "categoria": "Molhos e temperos",
+     "confianca": 1.0
+    },
+    {
+     "id": 110,
+     "produto": "Temperos lemon pepper",
+     "marca": "Caipiro",
+     "conteudo": 0.04,
+     "unidade_padrao": "kg",
+     "categoria": "Molhos e temperos",
+     "confianca": 1.0
+    },
+    {
+     "id": 111,
+     "produto": "Orégano",
+     "marca": "",
+     "conteudo": 0.01,
+     "unidade_padrao": "kg",
+     "categoria": "Molhos e temperos",
+     "confianca": 0.9
+    },
+    {
+     "id": 112,
+     "produto": "Açafrão",
+     "marca": "Caipiro",
+     "conteudo": 0.035,
+     "unidade_padrao": "kg",
+     "categoria": "Molhos e temperos",
+     "confianca": 1.0
+    },
+    {
+     "id": 113,
+     "produto": "Páprica defumada",
+     "marca": "Neresco",
+     "conteudo": 0.015,
+     "unidade_padrao": "kg",
+     "categoria": "Molhos e temperos",
+     "confianca": 1.0
+    },
+    {
+     "id": 114,
+     "produto": "Chocolate wafer slim",
+     "marca": "Trento",
+     "conteudo": 0.32,
+     "unidade_padrao": "kg",
+     "categoria": "Chocolates e doces",
+     "confianca": 1.0
+    },
+    {
+     "id": 115,
+     "produto": "Bebida energética fiesta mango",
+     "marca": "Monster",
+     "conteudo": 0.473,
+     "unidade_padrao": "l",
+     "categoria": "Sucos e refrescos",
+     "confianca": 0.9
+    },
+    {
+     "id": 116,
+     "produto": "Suco de pêssego",
+     "marca": "Del Valle",
+     "conteudo": 0.29,
+     "unidade_padrao": "l",
+     "categoria": "Sucos e refrescos",
+     "confianca": 1.0
+    },
+    {
+     "id": 117,
+     "produto": "Papel higiênico folha tripla 20m",
+     "marca": "Mili",
+     "conteudo": 12.0,
+     "unidade_padrao": "un",
+     "categoria": "Absorventes e papel higiênico",
+     "confianca": 1.0
+    },
+    {
+     "id": 118,
+     "produto": "Xampu liso dos sonhos",
+     "marca": "Elseve",
+     "conteudo": 0.4,
+     "unidade_padrao": "l",
+     "categoria": "Banho e cabelo",
+     "confianca": 1.0
+    },
+    {
+     "id": 119,
+     "produto": "Body splash xerosa",
+     "marca": "Vila La Vida",
+     "conteudo": 0.2,
+     "unidade_padrao": "l",
+     "categoria": "Diversos",
+     "confianca": 0.8
+    }
+   ],
+   "chamada": {
+    "modelo": "gemini-3.6-flash",
+    "tokens_in": 1300,
+    "tokens_out": 1325,
+    "custo": "0.005944",
+    "latencia_ms": 6906
+   },
+   "prompt_version": "v2"
+  },
+  "120": {
+   "itens": [
+    {
+     "id": 120,
+     "produto": "Inseticida aerosol ação total",
+     "marca": "Baygon",
+     "conteudo": 0.36,
+     "unidade_padrao": "l",
+     "categoria": "Limpeza da casa",
+     "confianca": 0.95
+    },
+    {
+     "id": 121,
+     "produto": "Sabonete líquido refil buquê de jasmim",
+     "marca": "Lux",
+     "conteudo": 0.2,
+     "unidade_padrao": "l",
+     "categoria": "Banho e cabelo",
+     "confianca": 0.95
+    },
+    {
+     "id": 122,
+     "produto": "Condicionador liso dos sonhos",
+     "marca": "Elseve",
+     "conteudo": 0.4,
+     "unidade_padrao": "l",
+     "categoria": "Banho e cabelo",
+     "confianca": 0.95
+    },
+    {
+     "id": 123,
+     "produto": "Creme dental gel carvão ativado menta",
+     "marca": "Closeup",
+     "conteudo": 0.1,
+     "unidade_padrao": "kg",
+     "categoria": "Higiene bucal",
+     "confianca": 0.95
+    },
+    {
+     "id": 124,
+     "produto": "Xampu anticaspa",
+     "marca": "Above",
+     "conteudo": 0.6,
+     "unidade_padrao": "l",
+     "categoria": "Banho e cabelo",
+     "confianca": 0.95
+    },
+    {
+     "id": 125,
+     "produto": "Loção hidratante soft milk",
+     "marca": "Nivea",
+     "conteudo": 0.2,
+     "unidade_padrao": "l",
+     "categoria": "Banho e cabelo",
+     "confianca": 0.95
+    },
+    {
+     "id": 126,
+     "produto": "Sabonete framboesa e amora",
+     "marca": "Palmolive",
+     "conteudo": 0.34,
+     "unidade_padrao": "kg",
+     "categoria": "Banho e cabelo",
+     "confianca": 0.9
+    },
+    {
+     "id": 127,
+     "produto": "Desodorante gel berry",
+     "marca": "Secret",
+     "conteudo": 0.045,
+     "unidade_padrao": "kg",
+     "categoria": "Desodorantes",
+     "confianca": 0.95
+    },
+    {
+     "id": 128,
+     "produto": "Pedra sanitária pinho",
+     "marca": "Glade",
+     "conteudo": 0.025,
+     "unidade_padrao": "kg",
+     "categoria": "Limpeza da casa",
+     "confianca": 0.95
+    },
+    {
+     "id": 129,
+     "produto": "Saco de lixo reciclado",
+     "marca": "Embalixo",
+     "conteudo": 20.0,
+     "unidade_padrao": "un",
+     "categoria": "Limpeza da casa",
+     "confianca": 0.95
+    },
+    {
+     "id": 130,
+     "produto": "Saco de lixo",
+     "marca": "Baianinha",
+     "conteudo": 20.0,
+     "unidade_padrao": "un",
+     "categoria": "Limpeza da casa",
+     "confianca": 0.95
+    },
+    {
+     "id": 131,
+     "produto": "Soda cáustica líquida",
+     "marca": "Ita Soda",
+     "conteudo": 1.0,
+     "unidade_padrao": "l",
+     "categoria": "Limpeza da casa",
+     "confianca": 0.9
+    },
+    {
+     "id": 132,
+     "produto": "Lixeira",
+     "marca": "ABS",
+     "conteudo": 1.0,
+     "unidade_padrao": "un",
+     "categoria": "Diversos",
+     "confianca": 0.8
+    },
+    {
+     "id": 133,
+     "produto": "Pano de limpeza em rolo",
+     "marca": "Em Casa Tem",
+     "conteudo": 100.0,
+     "unidade_padrao": "un",
+     "categoria": "Limpeza da casa",
+     "confianca": 0.9
+    },
+    {
+     "id": 134,
+     "produto": "Escova de dentes zig zag carvão",
+     "marca": "Colgate",
+     "conteudo": 2.0,
+     "unidade_padrao": "un",
+     "categoria": "Higiene bucal",
+     "confianca": 0.95
+    },
+    {
+     "id": 135,
+     "produto": "Manta de microfibra casal",
+     "marca": "Home Design",
+     "conteudo": 1.0,
+     "unidade_padrao": "un",
+     "categoria": "Diversos",
+     "confianca": 0.9
+    },
+    {
+     "id": 136,
+     "produto": "Mop rotatório",
+     "marca": "Nobre",
+     "conteudo": 1.0,
+     "unidade_padrao": "un",
+     "categoria": "Limpeza da casa",
+     "confianca": 0.9
+    },
+    {
+     "id": 137,
+     "produto": "Refrigerante",
+     "marca": "Sukita",
+     "conteudo": 2.0,
+     "unidade_padrao": "l",
+     "categoria": "Refrigerantes",
+     "confianca": 0.95
+    },
+    {
+     "id": 138,
+     "produto": "Cerveja pure gold",
+     "marca": "Stella Artois",
+     "conteudo": 1.0,
+     "unidade_padrao": "un",
+     "categoria": "Bebidas alcoólicas",
+     "confianca": 0.8
+    },
+    {
+     "id": 139,
+     "produto": "Salgante antiácido ice mint",
+     "marca": "Eno",
+     "conteudo": 0.00229,
+     "unidade_padrao": "kg",
+     "categoria": "Diversos",
+     "confianca": 0.85
+    }
+   ],
+   "chamada": {
+    "modelo": "gemini-3.6-flash",
+    "tokens_in": 1316,
+    "tokens_out": 1316,
+    "custo": "0.005922",
+    "latencia_ms": 9297
+   },
+   "prompt_version": "v2"
+  },
+  "140": {
+   "itens": [
+    {
+     "id": 140,
+     "produto": "Curativo",
+     "marca": "Sanfarma Mickey",
+     "conteudo": 1.0,
+     "unidade_padrao": "un",
+     "categoria": "Diversos",
+     "confianca": 0.85
+    },
+    {
+     "id": 141,
+     "produto": "Colchão Mochila",
+     "marca": "",
+     "conteudo": 1.0,
+     "unidade_padrao": "un",
+     "categoria": "Diversos",
+     "confianca": 0.7
+    },
+    {
+     "id": 142,
+     "produto": "Pão de Forma Tradicional",
+     "marca": "Lim",
+     "conteudo": 0.4,
+     "unidade_padrao": "kg",
+     "categoria": "Pães",
+     "confianca": 0.85
+    },
+    {
+     "id": 143,
+     "produto": "Queijo Mussarela Fatiado",
+     "marca": "Max",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Queijos",
+     "confianca": 0.9
+    },
+    {
+     "id": 144,
+     "produto": "Refrigerante de Guaraná",
+     "marca": "Kuat",
+     "conteudo": 2.0,
+     "unidade_padrao": "l",
+     "categoria": "Refrigerantes",
+     "confianca": 1.0
+    },
+    {
+     "id": 145,
+     "produto": "Ovo Branco",
+     "marca": "Mantiqueira",
+     "conteudo": 12.0,
+     "unidade_padrao": "un",
+     "categoria": "Ovos",
+     "confianca": 1.0
+    },
+    {
+     "id": 146,
+     "produto": "Ovo Vermelho Caipira",
+     "marca": "",
+     "conteudo": 30.0,
+     "unidade_padrao": "un",
+     "categoria": "Ovos",
+     "confianca": 0.95
+    },
+    {
+     "id": 147,
+     "produto": "Ovo de Codorna",
+     "marca": "",
+     "conteudo": 30.0,
+     "unidade_padrao": "un",
+     "categoria": "Ovos",
+     "confianca": 0.95
+    },
+    {
+     "id": 148,
+     "produto": "Fralda Confort Sec M",
+     "marca": "Pampers",
+     "conteudo": 34.0,
+     "unidade_padrao": "un",
+     "categoria": "Bebê",
+     "confianca": 1.0
+    },
+    {
+     "id": 149,
+     "produto": "Lenço Umedecido",
+     "marca": "Huggies",
+     "conteudo": 48.0,
+     "unidade_padrao": "un",
+     "categoria": "Bebê",
+     "confianca": 1.0
+    },
+    {
+     "id": 150,
+     "produto": "Mamadeira",
+     "marca": "Lillo",
+     "conteudo": 240.0,
+     "unidade_padrao": "l",
+     "categoria": "Bebê",
+     "confianca": 0.85
+    },
+    {
+     "id": 151,
+     "produto": "Papinha de Maçã",
+     "marca": "Nestlé",
+     "conteudo": 0.115,
+     "unidade_padrao": "kg",
+     "categoria": "Bebê",
+     "confianca": 1.0
+    },
+    {
+     "id": 152,
+     "produto": "Ração para Cães Adultos Carne",
+     "marca": "Pedigree",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Pet",
+     "confianca": 1.0
+    },
+    {
+     "id": 153,
+     "produto": "Ração para Gatos Peixe",
+     "marca": "Whiskas",
+     "conteudo": 0.5,
+     "unidade_padrao": "kg",
+     "categoria": "Pet",
+     "confianca": 1.0
+    },
+    {
+     "id": 154,
+     "produto": "Areia para Gato",
+     "marca": "Pipicat",
+     "conteudo": 4.0,
+     "unidade_padrao": "kg",
+     "categoria": "Pet",
+     "confianca": 1.0
+    },
+    {
+     "id": 155,
+     "produto": "Filé de Tilápia Congelado",
+     "marca": "",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Peixes e frutos do mar",
+     "confianca": 1.0
+    },
+    {
+     "id": 156,
+     "produto": "Camarão Limpo Congelado",
+     "marca": "",
+     "conteudo": 0.4,
+     "unidade_padrao": "kg",
+     "categoria": "Peixes e frutos do mar",
+     "confianca": 1.0
+    },
+    {
+     "id": 157,
+     "produto": "Bacalhau Desfiado",
+     "marca": "",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Peixes e frutos do mar",
+     "confianca": 1.0
+    },
+    {
+     "id": 158,
+     "produto": "Lombo Suíno Resfriado",
+     "marca": "",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Carne suína",
+     "confianca": 1.0
+    },
+    {
+     "id": 159,
+     "produto": "Bisteca Suína",
+     "marca": "",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Carne suína",
+     "confianca": 1.0
+    }
+   ],
+   "chamada": {
+    "modelo": "gemini-3.6-flash",
+    "tokens_in": 1197,
+    "tokens_out": 1254,
+    "custo": "0.005600",
+    "latencia_ms": 6187
+   },
+   "prompt_version": "v2"
+  },
+  "160": {
+   "itens": [
+    {
+     "id": 160,
+     "produto": "Pernil suíno sem osso",
+     "marca": "",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Carne suína",
+     "confianca": 1.0
+    },
+    {
+     "id": 161,
+     "produto": "Carne bovina acém moído",
+     "marca": "",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Carne bovina",
+     "confianca": 1.0
+    },
+    {
+     "id": 162,
+     "produto": "Coxa e sobrecoxa de frango",
+     "marca": "",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Aves",
+     "confianca": 1.0
+    },
+    {
+     "id": 163,
+     "produto": "Água mineral sem gás",
+     "marca": "Crystal",
+     "conteudo": 1.5,
+     "unidade_padrao": "l",
+     "categoria": "Água",
+     "confianca": 1.0
+    },
+    {
+     "id": 164,
+     "produto": "Água mineral com gás",
+     "marca": "Indaiá",
+     "conteudo": 0.5,
+     "unidade_padrao": "l",
+     "categoria": "Água",
+     "confianca": 1.0
+    },
+    {
+     "id": 165,
+     "produto": "Água de coco",
+     "marca": "Kero Coco",
+     "conteudo": 1.0,
+     "unidade_padrao": "l",
+     "categoria": "Sucos e refrescos",
+     "confianca": 1.0
+    },
+    {
+     "id": 166,
+     "produto": "Açúcar cristal",
+     "marca": "União",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Açúcar e adoçantes",
+     "confianca": 1.0
+    },
+    {
+     "id": 167,
+     "produto": "Açúcar refinado",
+     "marca": "Delta",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Açúcar e adoçantes",
+     "confianca": 1.0
+    },
+    {
+     "id": 168,
+     "produto": "Adoçante líquido",
+     "marca": "Zero Cal",
+     "conteudo": 0.1,
+     "unidade_padrao": "l",
+     "categoria": "Açúcar e adoçantes",
+     "confianca": 1.0
+    },
+    {
+     "id": 169,
+     "produto": "Farinha de trigo",
+     "marca": "Dona Benta",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Cereais, grãos e farinhas",
+     "confianca": 1.0
+    },
+    {
+     "id": 170,
+     "produto": "Farofa pronta",
+     "marca": "Yoki",
+     "conteudo": 0.4,
+     "unidade_padrao": "kg",
+     "categoria": "Cereais, grãos e farinhas",
+     "confianca": 1.0
+    },
+    {
+     "id": 171,
+     "produto": "Aveia em flocos",
+     "marca": "Quaker",
+     "conteudo": 0.17,
+     "unidade_padrao": "kg",
+     "categoria": "Cereais, grãos e farinhas",
+     "confianca": 1.0
+    },
+    {
+     "id": 172,
+     "produto": "Achocolatado em pó",
+     "marca": "Nescau",
+     "conteudo": 0.37,
+     "unidade_padrao": "kg",
+     "categoria": "Achocolatados e matinais",
+     "confianca": 1.0
+    },
+    {
+     "id": 173,
+     "produto": "Cereal matinal Sucrilhos",
+     "marca": "Kellogg's",
+     "conteudo": 0.3,
+     "unidade_padrao": "kg",
+     "categoria": "Achocolatados e matinais",
+     "confianca": 1.0
+    },
+    {
+     "id": 174,
+     "produto": "Granola tradicional",
+     "marca": "Mais Vita",
+     "conteudo": 0.8,
+     "unidade_padrao": "kg",
+     "categoria": "Achocolatados e matinais",
+     "confianca": 1.0
+    },
+    {
+     "id": 175,
+     "produto": "Absorvente noturno",
+     "marca": "Intimus",
+     "conteudo": 8.0,
+     "unidade_padrao": "un",
+     "categoria": "Absorventes e papel higiênico",
+     "confianca": 1.0
+    },
+    {
+     "id": 176,
+     "produto": "Absorvente tripla proteção",
+     "marca": "Always",
+     "conteudo": 16.0,
+     "unidade_padrao": "un",
+     "categoria": "Absorventes e papel higiênico",
+     "confianca": 1.0
+    },
+    {
+     "id": 177,
+     "produto": "Lava roupas líquido",
+     "marca": "Omo",
+     "conteudo": 1.6,
+     "unidade_padrao": "l",
+     "categoria": "Lavagem de roupa",
+     "confianca": 1.0
+    },
+    {
+     "id": 178,
+     "produto": "Sabão em pó primavera",
+     "marca": "Tixan",
+     "conteudo": 0.8,
+     "unidade_padrao": "kg",
+     "categoria": "Lavagem de roupa",
+     "confianca": 1.0
+    },
+    {
+     "id": 179,
+     "produto": "Amaciante concentrado",
+     "marca": "Comfort",
+     "conteudo": 0.5,
+     "unidade_padrao": "l",
+     "categoria": "Lavagem de roupa",
+     "confianca": 1.0
+    }
+   ],
+   "chamada": {
+    "modelo": "gemini-3.6-flash",
+    "tokens_in": 1229,
+    "tokens_out": 1309,
+    "custo": "0.005830",
+    "latencia_ms": 6437
+   },
+   "prompt_version": "v2"
+  },
+  "180": {
+   "itens": [
+    {
+     "id": 180,
+     "produto": "Alvejante",
+     "marca": "Qboa",
+     "conteudo": 1.0,
+     "unidade_padrao": "l",
+     "categoria": "Limpeza da casa",
+     "confianca": 1.0
+    },
+    {
+     "id": 181,
+     "produto": "Esponja de louça",
+     "marca": "Scotch-Brite",
+     "conteudo": 3.0,
+     "unidade_padrao": "un",
+     "categoria": "Louça",
+     "confianca": 1.0
+    },
+    {
+     "id": 182,
+     "produto": "Lava louça neutro",
+     "marca": "Ypê",
+     "conteudo": 0.5,
+     "unidade_padrao": "l",
+     "categoria": "Louça",
+     "confianca": 1.0
+    },
+    {
+     "id": 183,
+     "produto": "Limpador multiuso",
+     "marca": "Veja",
+     "conteudo": 0.5,
+     "unidade_padrao": "l",
+     "categoria": "Limpeza da casa",
+     "confianca": 1.0
+    },
+    {
+     "id": 184,
+     "produto": "Água sanitária",
+     "marca": "Ypê",
+     "conteudo": 2.0,
+     "unidade_padrao": "l",
+     "categoria": "Limpeza da casa",
+     "confianca": 1.0
+    },
+    {
+     "id": 185,
+     "produto": "Iogurte sabor morango",
+     "marca": "Nestlé",
+     "conteudo": 0.17,
+     "unidade_padrao": "kg",
+     "categoria": "Iogurtes e bebidas lácteas",
+     "confianca": 0.95
+    },
+    {
+     "id": 186,
+     "produto": "Iogurte grego tradicional",
+     "marca": "Vigor",
+     "conteudo": 0.1,
+     "unidade_padrao": "kg",
+     "categoria": "Iogurtes e bebidas lácteas",
+     "confianca": 1.0
+    },
+    {
+     "id": 187,
+     "produto": "Banana prata",
+     "marca": "",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Frutas",
+     "confianca": 1.0
+    },
+    {
+     "id": 188,
+     "produto": "Maçã gala",
+     "marca": "",
+     "conteudo": 1.0,
+     "unidade_padrao": "kg",
+     "categoria": "Frutas",
+     "confianca": 1.0
+    },
+    {
+     "id": 189,
+     "produto": "Alface crespa",
+     "marca": "",
+     "conteudo": 1.0,
+     "unidade_padrao": "un",
+     "categoria": "Legumes e verduras",
+     "confianca": 1.0
+    },
+    {
+     "id": 190,
+     "produto": "Salsicha hot dog",
+     "marca": "Sadia",
+     "conteudo": 0.5,
+     "unidade_padrao": "kg",
+     "categoria": "Frios e embutidos",
+     "confianca": 1.0
+    },
+    {
+     "id": 191,
+     "produto": "Biscoito cream cracker",
+     "marca": "Marilan",
+     "conteudo": 0.35,
+     "unidade_padrao": "kg",
+     "categoria": "Biscoitos",
+     "confianca": 1.0
+    },
+    {
+     "id": 192,
+     "produto": "Biscoito recheado sabor chocolate",
+     "marca": "Trakinas",
+     "conteudo": 0.126,
+     "unidade_padrao": "kg",
+     "categoria": "Biscoitos",
+     "confianca": 1.0
+    },
+    {
+     "id": 193,
+     "produto": "Vinho tinto suave",
+     "marca": "Pérgola",
+     "conteudo": 0.75,
+     "unidade_padrao": "l",
+     "categoria": "Bebidas alcoólicas",
+     "confianca": 1.0
+    },
+    {
+     "id": 194,
+     "produto": "Vodka",
+     "marca": "Smirnoff",
+     "conteudo": 0.998,
+     "unidade_padrao": "l",
+     "categoria": "Bebidas alcoólicas",
+     "confianca": 1.0
+    },
+    {
+     "id": 195,
+     "produto": "Tomate pelado",
+     "marca": "Arcolor",
+     "conteudo": 0.4,
+     "unidade_padrao": "kg",
+     "categoria": "Enlatados e conservas",
+     "confianca": 0.95
+    },
+    {
+     "id": 196,
+     "produto": "Lasanha à bolonhesa",
+     "marca": "Sadia",
+     "conteudo": 0.6,
+     "unidade_padrao": "kg",
+     "categoria": "Pizzas e pratos prontos",
+     "confianca": 1.0
+    },
+    {
+     "id": 197,
+     "produto": "Picolé",
+     "marca": "Fruttare",
+     "conteudo": 1.0,
+     "unidade_padrao": "un",
+     "categoria": "Sorvetes",
+     "confianca": 0.9
+    },
+    {
+     "id": 198,
+     "produto": "Chá matte",
+     "marca": "Matte Leão",
+     "conteudo": 0.04,
+     "unidade_padrao": "kg",
+     "categoria": "Café e chá",
+     "confianca": 1.0
+    },
+    {
+     "id": 199,
+     "produto": "Palito de dente",
+     "marca": "Gina",
+     "conteudo": 100.0,
+     "unidade_padrao": "un",
+     "categoria": "Papéis e descartáveis",
+     "confianca": 1.0
+    }
+   ],
+   "chamada": {
+    "modelo": "gemini-3.6-flash",
+    "tokens_in": 1217,
+    "tokens_out": 1654,
+    "custo": "0.007115",
+    "latencia_ms": 8687
+   },
+   "prompt_version": "v2"
+  }
+ }
+}

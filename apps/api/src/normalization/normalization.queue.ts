@@ -14,7 +14,7 @@ const TENTATIVAS = 5;
 @Injectable()
 export class NormalizationQueue implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(NormalizationQueue.name);
-  private readonly boss = new PgBoss(process.env.DATABASE_URL ?? '');
+  readonly boss = new PgBoss(process.env.DATABASE_URL ?? '');
 
   constructor(
     private readonly prisma: PrismaService,
