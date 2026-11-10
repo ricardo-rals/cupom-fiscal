@@ -68,6 +68,9 @@ services:
       API_URL: http://api:3000
       API_TOKEN_SECRET: ${API_TOKEN_SECRET:-}
       AUTH_SECRET: ${AUTH_SECRET:-}
+      # Dentro do container o host é 0.0.0.0; o Auth.js precisa do endereço que o navegador usa.
+      AUTH_URL: ${AUTH_URL:-http://localhost:3000}
+      AUTH_TRUST_HOST: "true"
       AUTH_GOOGLE_ID: ${AUTH_GOOGLE_ID:-}
       AUTH_GOOGLE_SECRET: ${AUTH_GOOGLE_SECRET:-}
     ports: ["3000:3000"]
