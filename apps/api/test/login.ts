@@ -20,6 +20,7 @@ export function comLogin(app: INestApplication<App>, dados = DADOS_DO_DONO) {
     get: (url: string) => http.get(url).set('Authorization', token()),
     post: (url: string) => http.post(url).set('Authorization', token()),
     patch: (url: string) => http.patch(url).set('Authorization', token()),
+    put: (url: string) => http.put(url).set('Authorization', token()),
     delete: (url: string) => http.delete(url).set('Authorization', token()),
   };
 }

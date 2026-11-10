@@ -117,3 +117,40 @@ export interface ItemRevisao {
   confianca: string;
   sugestao: Normalizacao | null;
 }
+
+export interface Orcamento {
+  categoria: string;
+  valor: number;
+  gasto_mes: number;
+  pct: number;
+  alerta: "perto" | "estourou" | null;
+}
+
+export interface PrevisaoGasto {
+  mes: string;
+  meses_com_compra: number;
+  total: {
+    metodo: string;
+    previsto: number;
+    inferior: number | null;
+    superior: number | null;
+    gasto_ate_agora: number;
+  };
+  categorias: {
+    categoria: string;
+    previsto: number;
+    gasto_ate_agora: number;
+    orcamento: number | null;
+  }[];
+}
+
+export interface Sugestao {
+  produto: number;
+  nome: string;
+  marca: string;
+  compras: number;
+  intervalo_dias: number;
+  dias_desde_a_ultima: number;
+  quantidade: number;
+  preco_esperado: number;
+}

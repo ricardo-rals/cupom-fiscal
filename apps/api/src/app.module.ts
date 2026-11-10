@@ -7,6 +7,8 @@ import { AskService } from './ask/ask.service.js';
 import { DashboardController } from './dashboard/dashboard.controller.js';
 import { DashboardService } from './dashboard/dashboard.service.js';
 import { ForecastController } from './forecast/forecast.controller.js';
+import { GastosController } from './gastos/gastos.controller.js';
+import { GastosService } from './gastos/gastos.service.js';
 import { ForecastService } from './forecast/forecast.service.js';
 import { NormalizationQueue } from './normalization/normalization.queue.js';
 import { NormalizationService } from './normalization/normalization.service.js';
@@ -24,6 +26,7 @@ import { ReviewService } from './review/review.service.js';
     DashboardController,
     ForecastController,
     AskController,
+    GastosController,
   ],
   providers: [
     // Toda rota exige login, menos as marcadas com @Publico().
@@ -36,6 +39,7 @@ import { ReviewService } from './review/review.service.js';
     DashboardService,
     ForecastService,
     AskService,
+    GastosService,
   ],
 })
 export class AppModule {}

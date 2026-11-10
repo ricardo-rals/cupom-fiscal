@@ -2,7 +2,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { Campo } from "@/app/campos";
-import { api, ErroApi } from "@/lib/api";
+import { api, ErroApi, type Orcamento } from "@/lib/api";
 import { dataCurta, moeda } from "@/lib/formato";
 import { periodoPadrao } from "@/lib/grafico";
 
@@ -163,10 +163,32 @@ async function Painel({ busca }: { busca: PageProps<"/dashboard">["searchParams"
   );
 }
 
+/** Orçamentos que passaram de 80% no mês, com link para a página de gastos. */
+async function AlertasDeOrcamento() {
+  const alertas = (await api<Orcamento[]>("/budgets")).filter((o) => o.alerta);
+  if (alertas.length === 0) return null;
+  return (
+    <div className="aviso" role="status">
+      {alertas.map((o) => (
+        <p key={o.categoria}>
+          {o.categoria}: {moeda(o.gasto_mes)} de {moeda(o.valor)}
+          {o.alerta === "estourou" ? ", orçamento estourado" : `, ${o.pct}% do orçamento`}
+        </p>
+      ))}
+      <Link href="/gastos" className="text-sm underline">
+        Ver gastos
+      </Link>
+    </div>
+  );
+}
+
 export default function Dashboard({ searchParams }: PageProps<"/dashboard">) {
   return (
     <>
       <h1 className="titulo">Dashboard</h1>
+      <Suspense>
+        <AlertasDeOrcamento />
+      </Suspense>
       <Suspense fallback={<p className="mt-4 text-suave">Carregando…</p>}>
         <Painel busca={searchParams} />
       </Suspense>

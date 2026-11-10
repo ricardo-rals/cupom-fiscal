@@ -52,6 +52,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               Cupom fiscal
             </Link>
             <Link href="/dashboard">Dashboard</Link>
+            <Link href="/gastos">Gastos</Link>
             <Link href="/perguntas">Perguntas</Link>
             <Link href="/revisao">Revisão</Link>
             <Suspense>

@@ -59,6 +59,7 @@ model User {
   userLabels         UserLabel[]
   forecasts          Forecast[]
   llmCalls           LlmCall[]
+  budgets            Budget[]
 
   @@map("users")
 }
@@ -126,6 +127,7 @@ model Category {
   products   Product[]
   userLabels UserLabel[]
   forecasts  Forecast[]
+  budgets    Budget[]
 
   @@map("categories")
 }
@@ -248,4 +250,17 @@ model ImportError {
   criado_em DateTime @default(now()) @db.Timestamptz
 
   @@map("import_errors")
+}
+
+// Orçamento mensal por categoria; o alerta sai da comparação com o gasto do mês.
+model Budget {
+  id           Int      @id @default(autoincrement())
+  user_id      Int
+  user         User     @relation(fields: [user_id], references: [id])
+  category_id  Int
+  category     Category @relation(fields: [category_id], references: [id])
+  valor_mensal Decimal  @db.Decimal(12, 2)
+
+  @@unique([user_id, category_id])
+  @@map("budgets")
 }

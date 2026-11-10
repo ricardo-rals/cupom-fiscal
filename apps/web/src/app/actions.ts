@@ -169,3 +169,14 @@ export async function lancarCompra(_: Estado, form: FormData): Promise<Estado> {
   revalidatePath("/", "layout");
   redirect(`/cupons/${id}`);
 }
+
+export async function definirOrcamento(_: Estado, form: FormData) {
+  return executar(
+    () =>
+      api("/budgets", "PUT", {
+        categoria: campo(form, "categoria"),
+        valor: decimal(campo(form, "valor")) || "0",
+      }),
+    "Orçamento salvo.",
+  );
+}
