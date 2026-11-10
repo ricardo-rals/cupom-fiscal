@@ -43,7 +43,20 @@ const VALOR = /^\d{1,10}(\.\d{1,2})?$/;
 const VALOR_UNITARIO = /^\d{1,10}(\.\d{1,4})?$/;
 const QUANTIDADE = /^\d{1,8}(\.\d{1,4})?$/;
 
+// Unidade escolhida numa lista: grama e mililitro viram kg e litro, para o preço por unidade fazer sentido.
+const UNIDADES: Record<string, { unidade: string; fator: number }> = {
+  UN: { unidade: 'UN', fator: 1 },
+  KG: { unidade: 'KG', fator: 1 },
+  G: { unidade: 'KG', fator: 0.001 },
+  L: { unidade: 'L', fator: 1 },
+  ML: { unidade: 'L', fator: 0.001 },
+};
+const ITENS_MAX = 200;
+const UNITARIO_MAX = new Prisma.Decimal('9999999999'); // Decimal(14, 4)
+const SEM_NOTA = 'Compra sem nota';
+
 type Corpo = Record<string, unknown> | undefined;
+type Transacao = Prisma.TransactionClient;
 
 const invalido = (campo: string) =>
   new BadRequestException({ erro: 'campo_invalido', campo });
@@ -68,6 +81,35 @@ function numero(corpo: Corpo, campo: string, formato: RegExp) {
   if (typeof valor !== 'string' || !formato.test(valor)) throw invalido(campo);
   return valor;
 }
+
+/** Item digitado na compra sem nota ou incluído num cupom: quantidade, unidade e valor pago. */
+function itemDigitado(corpo: Corpo) {
+  const escolhida = corpo?.unidade;
+  const unidade =
+    typeof escolhida === 'string'
+      ? UNIDADES[escolhida.toUpperCase()]
+      : undefined;
+  if (!unidade) throw invalido('unidade');
+  const quantidade = new Prisma.Decimal(numero(corpo, 'quantidade', QUANTIDADE))
+    .times(unidade.fator)
+    .toDecimalPlaces(4);
+  if (quantidade.lte(0)) throw invalido('quantidade'); // as views dividem por ela
+  const valorTotal = new Prisma.Decimal(numero(corpo, 'valor_total', VALOR));
+  const valorUnitario = valorTotal.div(quantidade).toDecimalPlaces(4);
+  if (valorUnitario.gt(UNITARIO_MAX)) throw invalido('quantidade');
+  return {
+    codigo: null,
+    descricao_original: texto(corpo, 'descricao_original', DESCRICAO_MAX),
+    quantidade,
+    unidade: unidade.unidade,
+    valor_unitario: valorUnitario,
+    valor_total: valorTotal,
+  };
+}
+
+/** O total acompanha os itens; nunca fica negativo. */
+const ajustarTotal = (tx: Transacao, id: number, diferenca: Prisma.Decimal) =>
+  tx.$executeRaw`UPDATE receipts SET total = GREATEST(total + ${diferenca.toString()}::numeric, 0) WHERE id = ${id}`;
 
 @Injectable()
 export class ReceiptsService {
@@ -215,6 +257,11 @@ export class ReceiptsService {
       item.receipt.status !== 'rascunho';
     await this.prisma.$transaction(async (tx) => {
       await tx.receiptItem.update({ where: { id: itemId }, data: dados });
+      await ajustarTotal(
+        tx,
+        id,
+        new Prisma.Decimal(dados.valor_total).minus(item.valor_total),
+      );
       if (renormalizar) {
         await tx.itemNormalization.deleteMany({
           where: { receipt_item_id: itemId },
@@ -227,6 +274,80 @@ export class ReceiptsService {
     });
     if (renormalizar && !(await this.fila.emAndamento(id)))
       await this.fila.enfileirar(id);
+    return this.situacao(id, usuario);
+  }
+
+  /** Item novo entra na normalização; em rascunho, espera a confirmação. */
+  async adicionarItem(id: number, usuario: number, corpo: Corpo) {
+    const dados = itemDigitado(corpo);
+    const cupom = await this.doUsuario(id, usuario);
+    const normalizar = cupom.status !== 'rascunho';
+    await this.prisma.$transaction(async (tx) => {
+      await tx.receiptItem.create({ data: { ...dados, receipt_id: id } });
+      await ajustarTotal(tx, id, dados.valor_total);
+      if (normalizar)
+        await tx.receipt.update({
+          where: { id },
+          data: { status: 'confirmado' },
+        });
+    });
+    if (normalizar && !(await this.fila.emAndamento(id)))
+      await this.fila.enfileirar(id);
+    return this.situacao(id, usuario);
+  }
+
+  async excluirItem(id: number, usuario: number, itemId: number) {
+    const item = await this.prisma.receiptItem.findFirst({
+      where: { id: itemId, receipt_id: id, receipt: { user_id: usuario } },
+    });
+    if (!item) throw new NotFoundException({ erro: 'item_nao_encontrado' });
+    await this.prisma.$transaction(async (tx) => {
+      await tx.receiptItem.delete({ where: { id: itemId } });
+      await ajustarTotal(tx, id, item.valor_total.neg());
+    });
+    return this.situacao(id, usuario);
+  }
+
+  /** Itens e normalizações saem junto, pelo ON DELETE CASCADE. */
+  async excluir(id: number, usuario: number) {
+    await this.doUsuario(id, usuario);
+    await this.prisma.receipt.delete({ where: { id } });
+  }
+
+  /** Compra sem nota: sem chave nem CNPJ, e o mercado é só um nome. */
+  async criarManual(usuario: number, corpo: Corpo, escolha?: boolean) {
+    const mercado = texto(corpo, 'mercado', TEXTO_MAX, true) || SEM_NOTA;
+    const emitido = new Date(texto(corpo, 'emitido_em', TEXTO_MAX));
+    if (Number.isNaN(emitido.getTime())) throw invalido('emitido_em');
+    const lista = corpo?.itens;
+    if (!Array.isArray(lista) || !lista.length || lista.length > ITENS_MAX)
+      throw invalido('itens');
+    const itens = lista.map((item) => itemDigitado(item as Corpo));
+    const usarIa = await this.usarIa(usuario, escolha);
+
+    const loja =
+      (await this.prisma.store.findFirst({
+        where: { user_id: usuario, cnpj: null, nome: mercado },
+      })) ??
+      (await this.prisma.store.create({
+        data: { user_id: usuario, nome: mercado },
+      }));
+    const { id } = await this.prisma.receipt.create({
+      data: {
+        user_id: usuario,
+        store_id: loja.id,
+        emitido_em: emitido,
+        total: itens.reduce(
+          (soma, item) => soma.plus(item.valor_total),
+          new Prisma.Decimal(0),
+        ),
+        origem: 'manual',
+        status: 'confirmado',
+        usar_ia: usarIa,
+        items: { create: itens },
+      },
+    });
+    await this.fila.enfileirar(id);
     return this.situacao(id, usuario);
   }
 

@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Param,
@@ -76,6 +77,38 @@ export class ReceiptsController {
   @HttpCode(200)
   confirmar(@Param('id', ParseIntPipe) id: number, @Usuario() usuario: number) {
     return this.receipts.confirmar(id, usuario);
+  }
+
+  @Post('manual')
+  criarManual(
+    @Usuario() usuario: number,
+    @Body() corpo: Record<string, unknown> | undefined,
+  ) {
+    return this.receipts.criarManual(usuario, corpo, usarIa(corpo?.usar_ia));
+  }
+
+  @Post(':id/items')
+  adicionarItem(
+    @Param('id', ParseIntPipe) id: number,
+    @Usuario() usuario: number,
+    @Body() corpo: Record<string, unknown>,
+  ) {
+    return this.receipts.adicionarItem(id, usuario, corpo);
+  }
+
+  @Delete(':id/items/:itemId')
+  excluirItem(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('itemId', ParseIntPipe) itemId: number,
+    @Usuario() usuario: number,
+  ) {
+    return this.receipts.excluirItem(id, usuario, itemId);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  excluir(@Param('id', ParseIntPipe) id: number, @Usuario() usuario: number) {
+    return this.receipts.excluir(id, usuario);
   }
 
   @Post('qr')

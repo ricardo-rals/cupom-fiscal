@@ -1,8 +1,17 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { corrigirItem, retomar, salvarCupom, salvarItem } from "@/app/actions";
+import {
+  corrigirItem,
+  excluirCupom,
+  excluirItem,
+  incluirItem,
+  retomar,
+  salvarCupom,
+  salvarItem,
+} from "@/app/actions";
 import { Campo, CamposNormalizacao } from "@/app/campos";
 import { Atualizador, Formulario } from "@/app/componentes";
+import { CamposItem } from "@/app/itens";
 import { api, type Cupom, ErroApi, type ItemCupom } from "@/lib/api";
 import { dataHora, moeda, paraCampoData } from "@/lib/formato";
 
@@ -104,6 +113,12 @@ function Item({
           </Formulario>
         </>
       )}
+
+      <Formulario
+        acao={excluirItem.bind(null, cupomId, item.id)}
+        botao="Excluir item"
+        className="mt-4"
+      />
     </details>
   );
 }
@@ -130,7 +145,9 @@ async function Detalhe({ params }: { params: Promise<{ id: string }> }) {
       <details className="mt-6">
         <summary className="subtitulo cursor-pointer">Editar dados do cupom</summary>
         <p className="mt-3 break-all text-sm text-suave">
-          CNPJ {cupom.cnpj} · Chave {cupom.chave_acesso}
+          {cupom.origem === "manual"
+            ? "Compra sem nota"
+            : `CNPJ ${cupom.cnpj} · Chave ${cupom.chave_acesso}`}
         </p>
         <Formulario acao={salvarCupom.bind(null, cupom.id)} botao="Salvar cupom" className={GRADE}>
           <Campo rotulo="Mercado" name="mercado" defaultValue={cupom.mercado} required />
@@ -165,12 +182,34 @@ async function Detalhe({ params }: { params: Promise<{ id: string }> }) {
           />
           <Campo rotulo="Pagamento" name="pagamento" defaultValue={cupom.pagamento ?? ""} />
         </Formulario>
+        <details className="mt-4">
+          <summary className="cursor-pointer text-sm text-erro">Excluir este cupom</summary>
+          <p className="mt-2 text-sm text-suave">
+            O cupom e os {cupom.itens} itens somem dos gastos e das previsões. Não dá para desfazer.
+          </p>
+          <Formulario
+            acao={excluirCupom.bind(null, cupom.id)}
+            botao="Excluir cupom e itens"
+            className="mt-2"
+          />
+        </details>
       </details>
 
       <h2 className="subtitulo mt-8">{cupom.itens} itens</h2>
       {cupom.lista.map((item) => (
         <Item key={item.id} cupomId={cupom.id} item={item} categorias={categorias} />
       ))}
+
+      <details className="mt-6">
+        <summary className="subtitulo cursor-pointer">Incluir item</summary>
+        <Formulario
+          acao={incluirItem.bind(null, cupom.id)}
+          botao="Incluir item"
+          className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3"
+        >
+          <CamposItem />
+        </Formulario>
+      </details>
     </>
   );
 }

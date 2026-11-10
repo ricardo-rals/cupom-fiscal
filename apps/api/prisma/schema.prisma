@@ -12,6 +12,7 @@ datasource db {
 enum ReceiptOrigem {
   qr
   foto
+  manual
 
   @@map("receipt_origem")
 }
@@ -67,7 +68,7 @@ model Store {
   id       Int       @id @default(autoincrement())
   user_id  Int
   user     User      @relation(fields: [user_id], references: [id])
-  cnpj     String    @db.Char(14)
+  cnpj     String?   @db.Char(14) // vazio em compra sem nota
   nome     String
   cidade   String?
   receipts Receipt[]
@@ -82,7 +83,7 @@ model Receipt {
   user         User          @relation(fields: [user_id], references: [id])
   store_id     Int
   store        Store         @relation(fields: [store_id], references: [id])
-  chave_acesso String        @db.Char(44)
+  chave_acesso String?       @db.Char(44) // vazia em compra sem nota
   emitido_em   DateTime      @db.Timestamptz
   total        Decimal       @db.Decimal(12, 2)
   desconto     Decimal       @default(0) @db.Decimal(12, 2)

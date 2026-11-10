@@ -11,6 +11,7 @@ const MENSAGENS: Record<string, string> = {
   layout_nao_reconhecido:
     "Não foi possível ler este cupom. A importação por foto ainda não está disponível.",
   campo_invalido: "Confira os valores preenchidos.",
+  nao_autenticado: "Entre de novo para continuar.",
   resolucao_invalida: "Confira os valores preenchidos.",
   categoria_invalida: "Escolha uma categoria da lista.",
   cpf_nao_permitido: "Não grave CPF no cupom.",
@@ -87,8 +88,9 @@ export interface Cupom {
   status: "rascunho" | "confirmado" | "normalizado";
   parada: boolean;
   mercado: string;
-  cnpj: string;
-  chave_acesso: string;
+  origem: "qr" | "foto" | "manual";
+  cnpj: string | null;
+  chave_acesso: string | null;
   emitido_em: string;
   total: string;
   desconto: string;

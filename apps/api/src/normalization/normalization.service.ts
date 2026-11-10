@@ -37,6 +37,7 @@ interface ItemPendente {
 const TAMANHO_DO_LOTE = 20;
 const TIMEOUT_AI_MS = 240_000; // cobre as novas tentativas de um lote
 const FINALIDADE = 'normalizacao';
+const SEM_CNPJ = '00000000000000';
 
 // Nome canônico e marca gravados sem acento e em minúsculas, para a chave única de produto funcionar.
 const canonico = (texto: string) =>
@@ -95,7 +96,8 @@ export class NormalizationService {
     });
 
     const usuario = cupom.user_id;
-    const cnpj = cupom.store.cnpj;
+    // Compra sem nota usa um CNPJ fictício no cache: a mesma descrição vale entre elas.
+    const cnpj = cupom.store.cnpj ?? SEM_CNPJ;
     const pendentes = await this.resolverSemLlm(cupom.items, cnpj, usuario);
 
     if (pendentes.length > 0) {

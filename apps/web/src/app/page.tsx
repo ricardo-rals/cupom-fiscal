@@ -5,6 +5,7 @@ import { dataHora, moeda } from "@/lib/formato";
 import { importar } from "./actions";
 import { Campo } from "./campos";
 import { Formulario } from "./componentes";
+import { UsarIa } from "./usar-ia";
 
 const STATUS = {
   rascunho: "Rascunho",
@@ -38,18 +39,6 @@ async function Cupons() {
   );
 }
 
-/** A caixa já vem com a última escolha do usuário. */
-async function UsarIa() {
-  const { usar_ia } = await api<{ usar_ia: boolean }>("/me");
-  return (
-    <label className="flex items-center gap-2 text-sm">
-      <input type="checkbox" name="usar_ia" defaultChecked={usar_ia} />
-      Usar IA para reconhecer os produtos
-      <span className="text-suave">(sem IA é grátis e instantâneo, mas menos preciso)</span>
-    </label>
-  );
-}
-
 export default function Inicio() {
   return (
     <>
@@ -67,6 +56,12 @@ export default function Inicio() {
           <UsarIa />
         </Suspense>
       </Formulario>
+      <p className="mt-3 text-sm">
+        Comprou sem nota?{" "}
+        <Link href="/compras/nova" className="underline">
+          Lançar compra
+        </Link>
+      </p>
 
       <h2 className="subtitulo mt-10 mb-2">Cupons</h2>
       <Suspense fallback={<p className="text-suave">Carregando…</p>}>

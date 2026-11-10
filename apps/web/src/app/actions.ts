@@ -95,3 +95,50 @@ export async function resolverRevisao(itemId: number, _: Estado, form: FormData)
 export async function retomar(id: number) {
   return executar(() => api(`/receipts/${id}/normalize`, "POST"), "Normalização retomada.");
 }
+
+const item = (form: FormData, prefixo = "") => ({
+  descricao_original: campo(form, `${prefixo}descricao_original`),
+  quantidade: decimal(campo(form, `${prefixo}quantidade`)),
+  unidade: campo(form, `${prefixo}unidade`),
+  valor_total: decimal(campo(form, `${prefixo}valor_total`)),
+});
+
+export async function incluirItem(id: number, _: Estado, form: FormData) {
+  return executar(() => api(`/receipts/${id}/items`, "POST", item(form)), "Item incluído.");
+}
+
+export async function excluirItem(id: number, itemId: number) {
+  return executar(() => api(`/receipts/${id}/items/${itemId}`, "DELETE"), "Item excluído.");
+}
+
+export async function excluirCupom(id: number): Promise<Estado> {
+  try {
+    await api(`/receipts/${id}`, "DELETE");
+  } catch (erro) {
+    if (erro instanceof ErroApi) return { erro: erro.message };
+    throw erro;
+  }
+  revalidatePath("/", "layout");
+  redirect("/");
+}
+
+/** Compra sem nota: as linhas chegam como itens.0.descricao_original, itens.1..., na ordem da tela. */
+export async function lancarCompra(_: Estado, form: FormData): Promise<Estado> {
+  const linhas = new Set(
+    [...form.keys()].flatMap((chave) => chave.match(/^itens\.(\d+)\./)?.[1] ?? []),
+  );
+  let id: number;
+  try {
+    ({ id } = await api<{ id: number }>("/receipts/manual", "POST", {
+      mercado: campo(form, "mercado"),
+      emitido_em: deCampoData(`${campo(form, "data")}T12:00`),
+      usar_ia: form.get("usar_ia") === "on",
+      itens: [...linhas].map((n) => item(form, `itens.${n}.`)),
+    }));
+  } catch (erro) {
+    if (erro instanceof ErroApi) return { erro: erro.message };
+    throw erro;
+  }
+  revalidatePath("/", "layout");
+  redirect(`/cupons/${id}`);
+}
