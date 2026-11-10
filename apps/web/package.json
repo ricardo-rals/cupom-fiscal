@@ -10,6 +10,10 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@opentelemetry/api-logs": "^0.223.0",
+    "@opentelemetry/instrumentation": "^0.223.0",
+    "@opentelemetry/sdk-logs": "^0.223.0",
+    "@vercel/otel": "^2.2.1",
     "next": "16.4.3",
     "react": "19.3.0",
     "react-dom": "19.3.0"

@@ -10,6 +10,7 @@ from ai.gemini import (
     criar_cliente,
     custo,
     gerar,
+    trace_id_atual,
 )
 from ai.normalize.schema import (
     CATEGORIAS,
@@ -128,6 +129,7 @@ def normalizar(
             tokens_out=tokens_out,
             custo=f"{custo(tokens_in, tokens_out):.6f}",
             latencia_ms=round((time.monotonic() - inicio) * 1000),
+            trace_id=trace_id_atual(),
         ),
         prompt_version=PROMPT_VERSION,
     )

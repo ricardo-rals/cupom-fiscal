@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { Campo } from "@/app/campos";
 import { api, ErroApi } from "@/lib/api";
@@ -72,6 +73,7 @@ function Comparacao({ resumo }: { resumo: Resumo }) {
 
 async function Painel({ busca }: { busca: PageProps<"/dashboard">["searchParams"] }) {
   const params = await busca;
+  await connection(); // o período padrão depende de hoje: nunca vem do prerender
   const texto = (nome: string) => (typeof params[nome] === "string" ? (params[nome] as string) : "");
   const padrao = periodoPadrao();
   const filtros = {

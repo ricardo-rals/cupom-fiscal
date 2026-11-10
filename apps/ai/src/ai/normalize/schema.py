@@ -92,6 +92,7 @@ class Chamada(BaseModel):
     tokens_out: int
     custo: str
     latencia_ms: int
+    trace_id: str | None = None
 
 
 class NormalizeRequest(BaseModel):

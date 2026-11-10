@@ -1,3 +1,9 @@
+# Traces dos três serviços vão para o Jaeger local: http://localhost:16686
+x-otel: &otel
+  OTEL_TRACES_EXPORTER: otlp
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+  OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+
 x-database-url: &database-url postgres://${POSTGRES_USER:-cupom}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-cupom}
 
 services:
@@ -23,9 +29,14 @@ services:
     depends_on:
       db: { condition: service_healthy }
 
+  jaeger:
+    image: jaegertracing/jaeger:2.5.0
+    ports: ["16686:16686"]
+
   ai:
     build: apps/ai
     environment:
+      <<: *otel
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       # Só o agente usa: papel que lê as três views e nada mais.
       AGENT_DATABASE_URL: postgres://agent_ro:${AGENT_RO_PASSWORD:-}@db:5432/${POSTGRES_DB:-cupom}
@@ -34,6 +45,7 @@ services:
   api:
     build: apps/api
     environment:
+      <<: *otel
       PORT: 3000
       DATABASE_URL: *database-url
       AI_URL: http://ai:8000
@@ -48,6 +60,8 @@ services:
   web:
     build: apps/web
     environment:
+      <<: *otel
+      OTEL_SERVICE_NAME: web
       API_URL: http://api:3000
     ports: ["3000:3000"]
     depends_on: [api]

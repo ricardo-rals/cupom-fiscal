@@ -8,4 +8,6 @@ COPY src ./src
 RUN uv sync --frozen --no-dev
 USER nobody
 EXPOSE 8000
-CMD ["/app/.venv/bin/uvicorn", "ai.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Traces desligados por padrão; o compose liga com OTEL_TRACES_EXPORTER=otlp e o endereço do Jaeger.
+ENV OTEL_SERVICE_NAME=ai OTEL_TRACES_EXPORTER=none OTEL_METRICS_EXPORTER=none OTEL_LOGS_EXPORTER=none
+CMD ["/app/.venv/bin/opentelemetry-instrument", "/app/.venv/bin/uvicorn", "ai.main:app", "--host", "0.0.0.0", "--port", "8000"]

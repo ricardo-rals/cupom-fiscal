@@ -14,7 +14,7 @@ import psycopg
 from pydantic import BaseModel, Field
 
 from ai.agent.sql import LIMITE, ConsultaRecusada, validar
-from ai.gemini import MODELO, criar_cliente, custo, gerar
+from ai.gemini import MODELO, criar_cliente, custo, gerar, trace_id_atual
 from ai.normalize.schema import CATEGORIAS, Chamada
 
 PROMPT_VERSION = "v1"
@@ -124,6 +124,7 @@ def perguntar(
                 tokens_out=saida,
                 custo=f"{custo(entrada, saida):.6f}",
                 latencia_ms=round((time.monotonic() - inicio) * 1000),
+                trace_id=trace_id_atual(),
             )
         )
         return texto
