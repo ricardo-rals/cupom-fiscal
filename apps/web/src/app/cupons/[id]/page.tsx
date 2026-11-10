@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import {
+  confirmar,
   corrigirItem,
   excluirCupom,
   excluirItem,
@@ -18,6 +19,17 @@ import { dataHora, moeda, paraCampoData } from "@/lib/formato";
 const GRADE = "mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2";
 
 function Situacao({ cupom }: { cupom: Cupom }) {
+  if (cupom.status === "rascunho") {
+    return (
+      <div className="aviso">
+        <p>
+          Lido da foto. Confira mercado, data e itens: corrija, inclua o que faltou e exclua o que
+          veio errado. Só depois de confirmar os itens entram nos gastos.
+        </p>
+        <Formulario acao={confirmar.bind(null, cupom.id)} botao="Confirmar cupom" className="mt-2" />
+      </div>
+    );
+  }
   if (cupom.parada) {
     return (
       <div className="aviso">

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
 import { NormalizationQueue } from '../normalization/normalization.queue.js';
+import { limiteDeGastoAtingido } from '../normalization/normalization.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 interface CupomItem {
@@ -32,6 +33,8 @@ interface Cupom {
 
 const IMPORTACAO_POR_FOTO = 'importar_por_foto';
 const TIMEOUT_AI_MS = 15_000;
+const TIMEOUT_FOTO_MS = 120_000; // OCR ou leitura da imagem pelo LLM
+const VALOR_MAX = new Prisma.Decimal('9999999999');
 // A URL vem do usuário e fica gravada quando a importação falha.
 const PADRAO_CPF = /(?<!\d)\d{3}\.?\d{3}\.?\d{3}-?\d{2}(?!\d)/g;
 const LISTA_MAX = 200; // ponytail: sem paginação; adicionar quando houver mais cupons que isso
@@ -56,6 +59,68 @@ const UNITARIO_MAX = new Prisma.Decimal('9999999999'); // Decimal(14, 4)
 const SEM_NOTA = 'Compra sem nota';
 
 type Corpo = Record<string, unknown> | undefined;
+
+interface ItemLido {
+  codigo: string | null;
+  descricao_original: string;
+  quantidade: string;
+  unidade: string;
+  valor_unitario: string;
+  valor_total: string;
+}
+
+interface ResultadoFoto {
+  tipo: 'url' | 'rascunho';
+  url: string | null;
+  rascunho: {
+    cnpj: string | null;
+    nome: string | null;
+    emitido_em: string | null;
+    chave_acesso: string | null;
+    itens: ItemLido[];
+    total: string | null;
+    desconto: string;
+    acrescimo: string;
+  } | null;
+  chamada: {
+    modelo: string;
+    tokens_in: number;
+    tokens_out: number;
+    custo: string;
+    latencia_ms: number;
+    trace_id?: string | null;
+  } | null;
+}
+
+/** Item lido de foto: OCR erra, então o que não cabe nas colunas fica de fora em vez de virar erro 500. */
+function itemLido(item: ItemLido) {
+  try {
+    const quantidade = new Prisma.Decimal(item.quantidade).toDecimalPlaces(4);
+    const unitario = new Prisma.Decimal(item.valor_unitario).toDecimalPlaces(4);
+    const total = new Prisma.Decimal(item.valor_total).toDecimalPlaces(2);
+    const descricao = item.descricao_original.replace(PADRAO_CPF, '').trim();
+    if (
+      !descricao ||
+      quantidade.lte(0) ||
+      quantidade.gt(99_999_999) ||
+      unitario.isNeg() ||
+      unitario.gt(VALOR_MAX) ||
+      total.isNeg() ||
+      total.gt(VALOR_MAX)
+    )
+      return null;
+    return {
+      codigo: item.codigo?.slice(0, TEXTO_MAX) || null,
+      descricao_original: descricao.slice(0, DESCRICAO_MAX),
+      quantidade,
+      unidade: item.unidade.slice(0, UNIDADE_MAX) || 'UN',
+      valor_unitario: unitario,
+      valor_total: total,
+    };
+  } catch {
+    return null; // número que o Decimal não entende
+  }
+}
 type Transacao = Prisma.TransactionClient;
 
 const invalido = (campo: string) =>
@@ -383,6 +448,107 @@ export class ReceiptsService {
       data: { usar_ia: escolha },
     });
     return escolha;
+  }
+
+  /**
+   * QR de Sefaz suportada segue como importação por URL. O resto vira rascunho: o usuário
+   * confere os itens lidos e confirma, e só então a normalização começa.
+   */
+  async importarPorFoto(usuario: number, imagem: string, escolha?: boolean) {
+    const usarIa = await this.usarIa(usuario, escolha);
+    const comIa =
+      usarIa && !(await limiteDeGastoAtingido(this.prisma, usuario));
+
+    let resposta: Response;
+    try {
+      resposta = await fetch(`${process.env.AI_URL}/nfce/foto`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imagem, usar_ia: comIa }),
+        signal: AbortSignal.timeout(TIMEOUT_FOTO_MS),
+      });
+    } catch {
+      throw new HttpException({ erro: 'ai_indisponivel' }, 502);
+    }
+    if (resposta.status === 400 || resposta.status === 422)
+      throw new BadRequestException({ erro: 'imagem_invalida' });
+    if (resposta.status === 503)
+      throw new HttpException({ erro: 'ocr_indisponivel' }, 503);
+    if (!resposta.ok) throw new HttpException({ erro: 'leitura_falhou' }, 502);
+    const resultado = (await resposta.json()) as ResultadoFoto;
+
+    if (resultado.tipo === 'url' && resultado.url)
+      return this.importarPorQr(resultado.url, usuario, usarIa);
+    if (!resultado.rascunho)
+      throw new HttpException({ erro: 'leitura_falhou' }, 502);
+
+    if (resultado.chamada)
+      await this.prisma.llmCall.create({
+        data: { user_id: usuario, finalidade: 'foto', ...resultado.chamada },
+      });
+    return this.salvarRascunho(usuario, resultado.rascunho, usarIa);
+  }
+
+  private async salvarRascunho(
+    usuario: number,
+    lido: NonNullable<ResultadoFoto['rascunho']>,
+    usarIa: boolean,
+  ) {
+    const chave = lido.chave_acesso;
+    if (chave) {
+      const existente = await this.buscarPorChave(usuario, chave);
+      if (existente) throw this.jaImportado(existente.id);
+    }
+    const itens = lido.itens.map(itemLido).filter((i) => i !== null);
+    const soma = itens.reduce(
+      (total, item) => total.plus(item.valor_total),
+      new Prisma.Decimal(0),
+    );
+    const nome =
+      (lido.nome ?? '').replace(PADRAO_CPF, '').trim().slice(0, TEXTO_MAX) ||
+      'Cupom por foto';
+    const emitido = lido.emitido_em ? new Date(lido.emitido_em) : new Date();
+    const total = lido.total ? new Prisma.Decimal(lido.total) : soma;
+
+    const loja = lido.cnpj
+      ? await this.prisma.store.upsert({
+          where: { user_id_cnpj: { user_id: usuario, cnpj: lido.cnpj } },
+          create: { user_id: usuario, cnpj: lido.cnpj, nome },
+          update: {},
+        })
+      : ((await this.prisma.store.findFirst({
+          where: { user_id: usuario, cnpj: null, nome },
+        })) ??
+        (await this.prisma.store.create({ data: { user_id: usuario, nome } })));
+
+    try {
+      const { id } = await this.prisma.receipt.create({
+        data: {
+          user_id: usuario,
+          store_id: loja.id,
+          chave_acesso: chave,
+          emitido_em: Number.isNaN(emitido.getTime()) ? new Date() : emitido,
+          total: total.isNeg() || total.gt(VALOR_MAX) ? soma : total,
+          desconto: lido.desconto,
+          acrescimo: lido.acrescimo,
+          origem: 'foto',
+          status: 'rascunho', // só normaliza depois que o usuário confere e confirma
+          usar_ia: usarIa,
+          items: { create: itens },
+        },
+      });
+      return this.situacao(id, usuario);
+    } catch (erro) {
+      if (
+        chave &&
+        erro instanceof Prisma.PrismaClientKnownRequestError &&
+        erro.code === 'P2002'
+      ) {
+        const atual = await this.buscarPorChave(usuario, chave);
+        if (atual) throw this.jaImportado(atual.id);
+      }
+      throw erro;
+    }
   }
 
   async importarPorQr(url: string, usuario: number, escolha?: boolean) {

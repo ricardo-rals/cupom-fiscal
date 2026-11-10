@@ -1,3 +1,4 @@
+import httpx
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
@@ -5,7 +6,18 @@ from ai.agent.agente import AgenteNaoConfigurado, RespostaAgente, perguntar
 from ai.forecast.modelos import prever
 from ai.gemini import LlmIndisponivel, LlmNaoConfigurado
 from ai.nfce.ba import LayoutNaoReconhecido
-from ai.nfce.consulta import ConsultaFalhou, UrlNaoPermitida, consultar
+from ai.nfce.consulta import PARSERS, ConsultaFalhou, UrlNaoPermitida, consultar
+from ai.nfce.foto import (
+    ImagemInvalida,
+    OcrIndisponivel,
+    ResultadoFoto,
+    abrir,
+    chave_da_url,
+    interpretar,
+    ler_com_ia,
+    ler_qr,
+    ocr,
+)
 from ai.nfce.schema import Cupom
 from ai.normalize.llm import normalizar
 from ai.normalize.local import normalizar_local
@@ -56,6 +68,48 @@ def nfce_parse(body: NfceParseRequest) -> Cupom:
         raise HTTPException(502, "consulta_falhou") from None
     except LayoutNaoReconhecido:
         raise HTTPException(422, "layout_nao_reconhecido") from None
+
+
+class FotoRequest(BaseModel):
+    imagem: str = Field(max_length=11_500_000)  # base64 de até 8 MB
+    usar_ia: bool = False
+
+
+def _suportada(url: str) -> bool:
+    try:
+        return httpx.URL(url).host in PARSERS
+    except httpx.InvalidURL:
+        return False
+
+
+@app.post("/nfce/foto")
+def nfce_foto(body: FotoRequest) -> ResultadoFoto:
+    """QR de Sefaz suportada volta como URL; o resto vira rascunho lido do texto."""
+    try:
+        imagem = abrir(body.imagem)
+    except ImagemInvalida:
+        raise HTTPException(400, "imagem_invalida") from None
+    url = ler_qr(imagem)
+    if url and _suportada(url):
+        return ResultadoFoto(tipo="url", url=url)
+
+    rascunho, chamada, leitor = None, None, "ocr"
+    if body.usar_ia:
+        try:
+            (rascunho, chamada), leitor = ler_com_ia(imagem), "ia"
+        except (LlmNaoConfigurado, LlmIndisponivel):
+            pass  # sem IA disponível, o OCR local tenta
+    if rascunho is None:
+        try:
+            rascunho = interpretar(ocr(imagem))
+        except OcrIndisponivel:
+            raise HTTPException(503, "ocr_indisponivel") from None
+    # QR de outro estado ainda dá a chave de acesso, que o texto pode não ter.
+    if url and not rascunho.chave_acesso:
+        rascunho.chave_acesso = chave_da_url(url)
+    return ResultadoFoto(
+        tipo="rascunho", rascunho=rascunho, leitor=leitor, chamada=chamada
+    )
 
 
 @app.post("/normalize/batch")

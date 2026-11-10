@@ -4,12 +4,13 @@ import { assinarToken } from "./token";
 
 const MENSAGENS: Record<string, string> = {
   url_invalida: "Cole a URL do QR code do cupom.",
-  url_nao_permitida: "Essa URL não é da Sefaz da Bahia.",
-  consulta_falhou:
-    "A Sefaz não respondeu. Tente de novo; a importação por foto ainda não está disponível.",
+  url_nao_permitida: "Essa URL não é da Sefaz da Bahia. Envie uma foto do cupom.",
+  consulta_falhou: "A Sefaz não respondeu. Tente de novo ou envie uma foto do cupom.",
   ai_indisponivel: "O serviço de leitura está fora do ar. Tente de novo em instantes.",
-  layout_nao_reconhecido:
-    "Não foi possível ler este cupom. A importação por foto ainda não está disponível.",
+  layout_nao_reconhecido: "Não foi possível ler este cupom pela URL. Envie uma foto dele.",
+  imagem_invalida: "Envie uma foto JPG, PNG ou WebP de até 8 MB.",
+  ocr_indisponivel: "A leitura de texto está fora do ar. Tente com IA ou de novo mais tarde.",
+  leitura_falhou: "Não foi possível ler a foto. Tente outra, com o cupom inteiro e bem iluminado.",
   campo_invalido: "Confira os valores preenchidos.",
   nao_autenticado: "Entre de novo para continuar.",
   resolucao_invalida: "Confira os valores preenchidos.",

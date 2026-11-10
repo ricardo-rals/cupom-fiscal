@@ -10,14 +10,17 @@ dependencies = [
     "opentelemetry-instrumentation-fastapi>=0.66b2",
     "opentelemetry-instrumentation-httpx>=0.66b2",
     "opentelemetry-instrumentation-psycopg>=0.66b2",
+    "pillow>=11",
     "psycopg[binary]>=3.3.7",
     "pydantic>=2.14.1",
+    "pytesseract>=0.3.13",
     "rapidfuzz>=3.14.6",
     "scikit-learn>=1.7",
     "selectolax>=1.0.2",
     "sqlglot>=30.29.0",
     "statsmodels>=0.15.0",
     "uvicorn[standard]>=0.54.0",
+    "zxing-cpp>=3.1",
 ]
 
 [build-system]

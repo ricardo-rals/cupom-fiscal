@@ -54,9 +54,16 @@ def _texto(corpo: dict) -> str:
 
 
 def gerar(
-    cliente: httpx.Client, sistema: str, mensagem: str, schema: dict
+    cliente: httpx.Client,
+    sistema: str,
+    mensagem: str,
+    schema: dict,
+    anexos: list[dict] | None = None,
 ) -> tuple[str, int, int]:
-    """Devolve o texto e os tokens de entrada e de saída, com o raciocínio contado na saída."""
+    """Devolve o texto e os tokens de entrada e de saída, com o raciocínio contado na saída.
+
+    `anexos` são partes extras da mensagem, como uma imagem em `inline_data`; não vão para o span.
+    """
     with _tracer.start_as_current_span(
         f"chat {MODELO}",
         kind=SpanKind.CLIENT,
@@ -73,7 +80,12 @@ def gerar(
                 URL,
                 json={
                     "systemInstruction": {"parts": [{"text": sistema}]},
-                    "contents": [{"role": "user", "parts": [{"text": mensagem}]}],
+                    "contents": [
+                        {
+                            "role": "user",
+                            "parts": [{"text": mensagem}, *(anexos or [])],
+                        }
+                    ],
                     "generationConfig": {
                         "responseMimeType": "application/json",
                         "responseSchema": schema,

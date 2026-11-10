@@ -48,6 +48,33 @@ export async function importar(_: Estado, form: FormData): Promise<Estado> {
   redirect(`/cupons/${id}`);
 }
 
+const FOTO_MAX = 8 * 1024 * 1024;
+
+/** A foto vai em base64 para a api; não fica guardada em lugar nenhum. */
+export async function importarFoto(_: Estado, form: FormData): Promise<Estado> {
+  const foto = form.get("foto");
+  if (!(foto instanceof File) || !foto.size) return { erro: "Escolha ou tire uma foto do cupom." };
+  if (foto.size > FOTO_MAX || !/^image\/(jpeg|png|webp)$/.test(foto.type))
+    return { erro: new ErroApi("imagem_invalida").message };
+  let id: unknown;
+  try {
+    ({ id } = await api<{ id: number }>("/receipts/foto", "POST", {
+      imagem: Buffer.from(await foto.arrayBuffer()).toString("base64"),
+      usar_ia: form.get("usar_ia") === "on",
+    }));
+  } catch (erro) {
+    if (!(erro instanceof ErroApi)) throw erro;
+    if (erro.codigo !== "cupom_ja_importado") return { erro: erro.message };
+    id = erro.corpo.receipt_id;
+  }
+  revalidatePath("/", "layout");
+  redirect(`/cupons/${id}`);
+}
+
+export async function confirmar(id: number) {
+  return executar(() => api(`/receipts/${id}/confirm`, "POST"), "Cupom confirmado.");
+}
+
 export async function salvarCupom(id: number, _: Estado, form: FormData) {
   return executar(
     () =>

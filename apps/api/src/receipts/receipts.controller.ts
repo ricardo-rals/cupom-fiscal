@@ -15,6 +15,7 @@ import { ReviewService } from '../review/review.service.js';
 import { ReceiptsService } from './receipts.service.js';
 
 const URL_MAX = 2048;
+const IMAGEM_MAX = 11_500_000; // base64 de 8 MB
 
 function usarIa(valor: unknown) {
   if (valor === undefined || typeof valor === 'boolean') return valor;
@@ -77,6 +78,21 @@ export class ReceiptsController {
   @HttpCode(200)
   confirmar(@Param('id', ParseIntPipe) id: number, @Usuario() usuario: number) {
     return this.receipts.confirmar(id, usuario);
+  }
+
+  @Post('foto')
+  importarPorFoto(
+    @Usuario() usuario: number,
+    @Body() corpo: { imagem?: unknown; usar_ia?: unknown } | undefined,
+  ) {
+    const imagem = corpo?.imagem;
+    if (typeof imagem !== 'string' || !imagem || imagem.length > IMAGEM_MAX)
+      throw new BadRequestException({ erro: 'imagem_invalida' });
+    return this.receipts.importarPorFoto(
+      usuario,
+      imagem,
+      usarIa(corpo?.usar_ia),
+    );
   }
 
   @Post('manual')

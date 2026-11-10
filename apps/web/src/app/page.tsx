@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { api, type ResumoCupom } from "@/lib/api";
 import { dataHora, moeda } from "@/lib/formato";
-import { importar } from "./actions";
+import { importar, importarFoto } from "./actions";
 import { Campo } from "./campos";
 import { Formulario } from "./componentes";
 import { UsarIa } from "./usar-ia";
@@ -56,7 +56,27 @@ export default function Inicio() {
           <UsarIa />
         </Suspense>
       </Formulario>
-      <p className="mt-3 text-sm">
+
+      <h2 className="subtitulo mt-8">Ou pela foto do cupom</h2>
+      <p className="mt-1 text-sm text-suave">
+        Se a foto mostrar o QR code, o cupom vem da Sefaz. Sem QR, o texto é lido e você confere
+        antes de confirmar. A foto não fica guardada.
+      </p>
+      <Formulario acao={importarFoto} botao="Enviar foto" className="mt-3 grid gap-3">
+        <input
+          type="file"
+          name="foto"
+          accept="image/jpeg,image/png,image/webp"
+          capture="environment"
+          required
+          aria-label="Foto do cupom"
+        />
+        <Suspense>
+          <UsarIa />
+        </Suspense>
+      </Formulario>
+
+      <p className="mt-6 text-sm">
         Comprou sem nota?{" "}
         <Link href="/compras/nova" className="underline">
           Lançar compra
