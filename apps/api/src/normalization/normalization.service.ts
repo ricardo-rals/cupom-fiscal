@@ -87,13 +87,14 @@ export class NormalizationService {
 
   /** Pode ser chamado de novo: itens já resolvidos são ignorados. */
   async normalizarCupom(receiptId: number) {
-    const cupom = await this.prisma.receipt.findUniqueOrThrow({
+    const cupom = await this.prisma.receipt.findUnique({
       where: { id: receiptId },
       include: {
         store: true,
         items: { where: { normalization: { is: null } } },
       },
     });
+    if (!cupom) return; // excluído depois de entrar na fila: não há o que fazer
 
     const usuario = cupom.user_id;
     // Compra sem nota usa um CNPJ fictício no cache: a mesma descrição vale entre elas.

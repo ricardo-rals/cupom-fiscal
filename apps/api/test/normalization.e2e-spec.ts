@@ -272,6 +272,12 @@ describe('normalização de um cupom', () => {
         : { status: 503 },
     );
 
+  it('cupom excluído antes do job: termina sem erro e sem nova tentativa', async () => {
+    const { receiptId } = await criarCupom([`${PREFIXO} EXCLUIDO`]);
+    await db.query('DELETE FROM receipts WHERE id = $1', [receiptId]);
+    await expect(servico.normalizarCupom(receiptId)).resolves.toBeUndefined();
+  });
+
   it('sem chave de API: o modelo local sugere e o item vai para revisão', async () => {
     const { receiptId, ids } = await criarCupom([`${PREFIXO} SEM CHAVE`]);
     const chamadas = localResponde();
