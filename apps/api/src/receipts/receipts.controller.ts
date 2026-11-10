@@ -15,6 +15,11 @@ import { ReceiptsService } from './receipts.service.js';
 
 const URL_MAX = 2048;
 
+function usarIa(valor: unknown) {
+  if (valor === undefined || typeof valor === 'boolean') return valor;
+  throw new BadRequestException({ erro: 'campo_invalido', campo: 'usar_ia' });
+}
+
 @Controller('receipts')
 export class ReceiptsController {
   constructor(
@@ -76,12 +81,12 @@ export class ReceiptsController {
   @Post('qr')
   importarPorQr(
     @Usuario() usuario: number,
-    @Body() body: { url?: unknown } | undefined,
+    @Body() body: { url?: unknown; usar_ia?: unknown } | undefined,
   ) {
     const url = body?.url;
     if (typeof url !== 'string' || !url.trim() || url.length > URL_MAX) {
       throw new BadRequestException({ erro: 'url_invalida' });
     }
-    return this.receipts.importarPorQr(url, usuario);
+    return this.receipts.importarPorQr(url, usuario, usarIa(body?.usar_ia));
   }
 }

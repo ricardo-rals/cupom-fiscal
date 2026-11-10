@@ -69,3 +69,30 @@ Resultado geral: erro de **6.1%** contra 5.9% do baseline (não melhor que o bas
 
 Modelo escolhido nos meses reservados: `ultimo_preco` 132, `tendencia_linear` 54, `suavizacao_exponencial` 14.
 <!-- previsao:fim -->
+
+<!-- normalizacao-local:inicio -->
+## Normalização com e sem IA
+
+- Sem IA: validação cruzada em 5 partes, cada item previsto por um modelo treinado com os outros 4/5 do conjunto e com o vocabulário de `lexico.py`.
+- Com IA: as respostas salvas da seção anterior, sem nova chamada.
+- Tempo do modelo local, incluindo o treino: 38 ms por item.
+
+| Métrica | Com IA (LLM), todos | Com IA (LLM), reais | Sem IA (local), todos | Sem IA (local), reais |
+| --- | --- | --- | --- | --- |
+| Categoria | 97.0% | 97.2% | 81.5% | 80.0% |
+| Produto e unidade | 82.0% | 80.0% | 16.5% | 16.6% |
+| Unidade padrão | 99.5% | 100.0% | 97.5% | 97.2% |
+| Conteúdo, tolerância de 1% | 99.0% | 99.3% | 89.0% | 91.7% |
+| Marca | 92.0% | 91.0% | 46.5% | 51.7% |
+
+### Confiança
+
+- Com IA, limiar 0.8: 199 de 200 itens, com 97.0% de acerto de categoria.
+- Sem IA, limiar 0.5: 142 de 200 itens, com 94.4% de acerto de categoria.
+- O que fica abaixo do limiar vai para a fila de revisão com a sugestão preenchida.
+
+### Como ler
+
+- Sem IA o nome do produto é a descrição do cupom limpa: abreviações como `QJ MUSS` não viram `queijo mussarela`. Por isso produto e marca ficam bem abaixo do LLM; categoria, conteúdo e unidade são o que o modelo local acerta.
+- No uso real o modelo também aprende com as correções do usuário: item igual a um já corrigido copia a correção, e cada correção vira exemplo de treino.
+<!-- normalizacao-local:fim -->

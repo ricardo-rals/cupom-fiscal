@@ -66,14 +66,16 @@ describe('normalização de um cupom', () => {
     return { receiptId: rows[0].id, ids };
   };
 
-  const iaResponde = (montar: (corpo: CorpoEnviado) => { status?: number; corpo?: unknown }) => {
-    const chamadas: CorpoEnviado[] = [];
+  const iaResponde = (
+    montar: (corpo: CorpoEnviado, url: string) => { status?: number; corpo?: unknown },
+  ) => {
+    const chamadas: (CorpoEnviado & { url: string })[] = [];
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (_url: string, init: { body: string }) => {
+      vi.fn(async (url: string, init: { body: string }) => {
         const corpo = JSON.parse(init.body) as CorpoEnviado;
-        chamadas.push(corpo);
-        const { status = 200, corpo: resposta = {} } = montar(corpo);
+        chamadas.push({ ...corpo, url });
+        const { status = 200, corpo: resposta = {} } = montar(corpo, url);
         return Response.json(resposta, { status });
       }),
     );
@@ -262,13 +264,40 @@ describe('normalização de um cupom', () => {
     expect(item.llm_call_id).not.toBeNull();
   });
 
-  it('sem chave de API: tudo vai para revisão', async () => {
+  // O modelo local responde com confiança 0,3: abaixo do limiar de 0,5, vai para revisão.
+  const localResponde = (confianca = 0.3) =>
+    iaResponde((corpo, url) =>
+      url.endsWith('/normalize/local')
+        ? { corpo: { itens: corpo.itens.map((i) => normalizado(i.id, { confianca })) } }
+        : { status: 503 },
+    );
+
+  it('sem chave de API: o modelo local sugere e o item vai para revisão', async () => {
     const { receiptId, ids } = await criarCupom([`${PREFIXO} SEM CHAVE`]);
-    iaResponde(() => ({ status: 503 }));
+    const chamadas = localResponde();
 
     await servico.normalizarCupom(receiptId);
 
-    expect(await normalizacao(ids[0])).toMatchObject({ em_revisao: true, product_id: null });
+    expect(chamadas.map((c) => c.url)).toEqual([
+      'http://ai-teste/normalize/batch',
+      'http://ai-teste/normalize/local',
+    ]);
+    const resultado = await normalizacao(ids[0]);
+    expect(resultado).toMatchObject({ em_revisao: true, origem: 'local', llm_call_id: null });
+    expect(resultado.product_id).not.toBeNull(); // a sugestão aparece na revisão
+  });
+
+  it('cupom sem IA: não chama o LLM e o resultado confiante não entra no cache', async () => {
+    const { receiptId, ids } = await criarCupom([`${PREFIXO} SEM IA`]);
+    await db.query('UPDATE receipts SET usar_ia = false WHERE id = $1', [receiptId]);
+    const chamadas = localResponde(0.7);
+
+    await servico.normalizarCupom(receiptId);
+
+    expect(chamadas.map((c) => c.url)).toEqual(['http://ai-teste/normalize/local']);
+    expect(await normalizacao(ids[0])).toMatchObject({ em_revisao: false, origem: 'local' });
+    const { rows } = await db.query('SELECT 1 FROM normalization_cache WHERE cnpj = $1', [CNPJ]);
+    expect(rows).toHaveLength(0);
   });
 
   it('limite mensal atingido: não chama o LLM e manda para revisão', async () => {
@@ -277,12 +306,12 @@ describe('normalização de um cupom', () => {
        VALUES (1, 'normalizacao', 'gemini-3.6-flash', 1, 1, 6, 1)`,
     );
     const { receiptId, ids } = await criarCupom([`${PREFIXO} LIMITE`]);
-    const chamadas = iaResolveTudo();
+    const chamadas = localResponde();
 
     await servico.normalizarCupom(receiptId);
 
-    expect(chamadas).toHaveLength(0);
-    expect(await normalizacao(ids[0])).toMatchObject({ em_revisao: true, product_id: null });
+    expect(chamadas.map((c) => c.url)).toEqual(['http://ai-teste/normalize/local']);
+    expect(await normalizacao(ids[0])).toMatchObject({ em_revisao: true, origem: 'local' });
   });
 
   it('LLM fora do ar: falha, não marca o cupom e dá para repetir depois', async () => {

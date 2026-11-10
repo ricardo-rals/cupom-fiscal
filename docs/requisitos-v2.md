@@ -44,8 +44,9 @@ Aceite: teste e2e com dois usuários em que nenhum endpoint e nenhuma pergunta a
 
 - Classificador local (scikit-learn: TF-IDF de caracteres + regressão logística) para a categoria, treinado com `evals/data/normalization_gold.csv` e as correções do usuário.
 - Produto: busca do mais parecido entre os produtos já conhecidos (`rapidfuzz`, já instalado); conteúdo e unidade por regex ("200G" vira 0,2 kg).
-- Confiança baixa vai para a fila de revisão, como hoje.
-- Com IA: o LLM só recebe os itens em que o modelo local ficou inseguro (fica mais barato e mais rápido).
+- Confiança baixa (abaixo de `NORMALIZACAO_LIMIAR_LOCAL`, padrão 0,5) vai para a fila de revisão, já com a sugestão.
+- Com IA o LLM continua normalizando tudo. Mudança em relação à primeira versão: mandar ao LLM só os itens duvidosos deixaria os confiantes com o nome cru do cupom ("qj lac gloria muss fat"), porque o modelo local não expande abreviações. O modelo local entra com IA quando o LLM não pode responder (sem chave, chave recusada, limite de gasto), e os itens vão para a revisão com sugestão em vez de vazios.
+- A escolha é feita a cada importação e a última vira o padrão do usuário.
 
 Aceite: `evals/run_normalization.py` roda nos dois modos e o `docs/results.md` mostra os dois lado a lado.
 

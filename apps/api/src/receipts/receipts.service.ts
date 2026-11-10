@@ -249,14 +249,33 @@ export class ReceiptsService {
     return situacao;
   }
 
-  async importarPorQr(url: string, usuario: number) {
+  /** Sem escolha, vale a preferência do usuário; com escolha, ela vira a nova preferência. */
+  private async usarIa(usuario: number, escolha: boolean | undefined) {
+    if (escolha === undefined) {
+      const { usar_ia } = await this.prisma.user.findUniqueOrThrow({
+        where: { id: usuario },
+      });
+      return usar_ia;
+    }
+    await this.prisma.user.update({
+      where: { id: usuario },
+      data: { usar_ia: escolha },
+    });
+    return escolha;
+  }
+
+  async importarPorQr(url: string, usuario: number, escolha?: boolean) {
     const cupom = await this.consultarCupom(url);
 
     const existente = await this.buscarPorChave(usuario, cupom.chave_acesso);
     if (existente) throw this.jaImportado(existente.id);
 
     try {
-      const salvo = await this.salvar(cupom, usuario);
+      const salvo = await this.salvar(
+        cupom,
+        usuario,
+        await this.usarIa(usuario, escolha),
+      );
       await this.fila.enfileirar(salvo.id);
       return salvo;
     } catch (erro) {
@@ -337,7 +356,7 @@ export class ReceiptsService {
     );
   }
 
-  private async salvar(cupom: Cupom, usuario: number) {
+  private async salvar(cupom: Cupom, usuario: number, usarIa: boolean) {
     const dono = { connect: { id: usuario } };
     const loja = {
       cnpj: cupom.cnpj,
@@ -348,6 +367,7 @@ export class ReceiptsService {
     const receipt = await this.prisma.receipt.create({
       data: {
         user: dono,
+        usar_ia: usarIa,
         store: {
           connectOrCreate: {
             where: { user_id_cnpj: { user_id: usuario, cnpj: cupom.cnpj } },

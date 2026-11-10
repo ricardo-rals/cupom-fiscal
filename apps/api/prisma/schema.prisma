@@ -28,6 +28,7 @@ enum NormalizacaoOrigem {
   llm
   cache
   usuario
+  local
 
   @@map("normalizacao_origem")
 }
@@ -89,6 +90,8 @@ model Receipt {
   pagamento    String?
   origem       ReceiptOrigem
   status       ReceiptStatus
+  // Escolhido na importação; sem IA o modelo local normaliza.
+  usar_ia      Boolean       @default(true)
   criado_em    DateTime      @default(now()) @db.Timestamptz
   items        ReceiptItem[]
 

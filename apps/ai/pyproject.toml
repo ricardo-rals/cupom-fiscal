@@ -13,6 +13,7 @@ dependencies = [
     "psycopg[binary]>=3.3.7",
     "pydantic>=2.14.1",
     "rapidfuzz>=3.14.6",
+    "scikit-learn>=1.7",
     "selectolax>=1.0.2",
     "sqlglot>=30.29.0",
     "statsmodels>=0.15.0",

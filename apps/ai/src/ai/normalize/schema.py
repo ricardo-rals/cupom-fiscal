@@ -60,6 +60,8 @@ class ItemEntrada(BaseModel):
 
 
 class Correcao(BaseModel):
+    model_config = ConfigDict(frozen=True)  # entra na chave do cache do modelo local
+
     descricao_original: str
     produto: str
     marca: str

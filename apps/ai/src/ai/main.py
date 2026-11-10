@@ -8,7 +8,12 @@ from ai.nfce.ba import LayoutNaoReconhecido
 from ai.nfce.consulta import ConsultaFalhou, UrlNaoPermitida, consultar
 from ai.nfce.schema import Cupom
 from ai.normalize.llm import normalizar
-from ai.normalize.schema import NormalizeRequest, NormalizeResponse
+from ai.normalize.local import normalizar_local
+from ai.normalize.schema import (
+    ItemNormalizado,
+    NormalizeRequest,
+    NormalizeResponse,
+)
 
 app = FastAPI(title="cupom-fiscal ai")
 
@@ -61,6 +66,16 @@ def normalize_batch(body: NormalizeRequest) -> NormalizeResponse:
         raise HTTPException(503, "llm_nao_configurado") from None
     except LlmIndisponivel:
         raise HTTPException(502, "llm_indisponivel") from None
+
+
+class NormalizeLocalResponse(BaseModel):
+    itens: list[ItemNormalizado]
+
+
+@app.post("/normalize/local")
+def normalize_local(body: NormalizeRequest) -> NormalizeLocalResponse:
+    """Sem LLM: modelo treinado com as correções do usuário e o vocabulário de cupom."""
+    return NormalizeLocalResponse(itens=normalizar_local(body.itens, body.correcoes))
 
 
 @app.post("/forecast/run")

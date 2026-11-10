@@ -24,6 +24,10 @@ interface RespostaIa {
   prompt_version: string;
 }
 
+type Resultado =
+  | { origem: 'llm'; resposta: RespostaIa }
+  | { origem: 'local'; itens: ItemNormalizado[] };
+
 interface ItemPendente {
   id: number;
   descricao_original: string;
@@ -102,7 +106,9 @@ export class NormalizationService {
       // Só as chamadas à IA vão em paralelo: o tempo do cupom é o do lote mais lento.
       // A gravação segue em ordem, porque lotes diferentes podem criar o mesmo produto.
       const respostas = await Promise.allSettled(
-        lotes.map((lote) => this.consultarLote(lote, correcoes, usuario)),
+        lotes.map((lote) =>
+          this.consultarLote(lote, correcoes, usuario, cupom.usar_ia),
+        ),
       );
       for (const [i, resposta] of respostas.entries()) {
         if (resposta.status === 'fulfilled')
@@ -179,38 +185,65 @@ export class NormalizationService {
     }));
   }
 
+  /** Sem IA, no limite de gasto ou sem chave do LLM, o modelo local resolve o lote. */
   private async consultarLote(
     lote: ItemPendente[],
     correcoes: unknown[],
     usuario: number,
-  ) {
-    if (await limiteDeGastoAtingido(this.prisma, usuario))
-      return 'sem_llm' as const;
-    return this.chamarIa(lote, correcoes);
+    usarIa: boolean,
+  ): Promise<Resultado> {
+    if (usarIa && !(await limiteDeGastoAtingido(this.prisma, usuario))) {
+      const resposta = await this.chamarIa<RespostaIa>(
+        '/normalize/batch',
+        lote,
+        correcoes,
+      );
+      if (resposta !== 'sem_llm') return { origem: 'llm', resposta };
+    }
+    const local = await this.chamarIa<{ itens: ItemNormalizado[] }>(
+      '/normalize/local',
+      lote,
+      correcoes,
+    );
+    if (local === 'sem_llm')
+      throw new ServiceUnavailableException({ erro: 'ai_indisponivel' });
+    return { origem: 'local', itens: local.itens };
   }
 
   private async gravarLote(
     lote: ItemPendente[],
-    resposta: RespostaIa | 'sem_llm',
+    resultado: Resultado,
     cnpj: string,
     usuario: number,
   ) {
-    if (resposta === 'sem_llm') return this.enviarParaRevisao(lote);
-
-    const limiar = Number(process.env.NORMALIZACAO_LIMIAR ?? 0.8);
-    const porId = new Map(resposta.itens.map((item) => [item.id, item]));
+    const local = resultado.origem === 'local';
+    const itens = local ? resultado.itens : resultado.resposta.itens;
+    // O modelo local é menos confiante por natureza: a probabilidade se divide entre 43 categorias.
+    const limiar = Number(
+      local
+        ? (process.env.NORMALIZACAO_LIMIAR_LOCAL ?? 0.5)
+        : (process.env.NORMALIZACAO_LIMIAR ?? 0.8),
+    );
+    const porId = new Map(itens.map((item) => [item.id, item]));
     const categorias = new Map(
       (await this.prisma.category.findMany()).map((c) => [c.nome, c.id]),
     );
 
     await this.prisma.$transaction(async (tx) => {
-      const chamada = await tx.llmCall.create({
-        data: { user_id: usuario, finalidade: FINALIDADE, ...resposta.chamada },
-      });
-      const comum = {
-        llm_call_id: chamada.id,
-        prompt_version: resposta.prompt_version,
-      };
+      const comum = { origem: resultado.origem };
+      if (resultado.origem === 'llm') {
+        const chamada = await tx.llmCall.create({
+          data: {
+            user_id: usuario,
+            finalidade: FINALIDADE,
+            ...resultado.resposta.chamada,
+          },
+        });
+        Object.assign(comum, {
+          llm_call_id: chamada.id,
+          prompt_version: resultado.resposta.prompt_version,
+        });
+      }
 
       for (const item of lote) {
         const normalizado = porId.get(item.id);
@@ -220,7 +253,6 @@ export class NormalizationService {
             data: {
               receipt_item_id: item.id,
               confianca: 0,
-              origem: 'llm',
               em_revisao: true,
               ...comum,
             },
@@ -240,13 +272,13 @@ export class NormalizationService {
             receipt_item_id: item.id,
             product_id: produto.id,
             confianca: normalizado.confianca,
-            origem: 'llm',
             em_revisao: !confiante,
             ...comum,
           },
         });
         // Palpite duvidoso não entra no cache, senão se repetiria sem passar pela revisão.
-        if (confiante) {
+        // Resultado local também não: no próximo cupom com IA, o LLM tem a chance de melhorar o nome.
+        if (confiante && !local) {
           const id = {
             user_id: usuario,
             descricao_original: item.descricao_original,
@@ -262,10 +294,15 @@ export class NormalizationService {
     });
   }
 
-  private async chamarIa(lote: ItemPendente[], correcoes: unknown[]) {
+  /** 503 é LLM sem chave ou com chave recusada: quem chama cai para o modelo local. */
+  private async chamarIa<T>(
+    caminho: string,
+    lote: ItemPendente[],
+    correcoes: unknown[],
+  ): Promise<T | 'sem_llm'> {
     let resposta: Response;
     try {
-      resposta = await fetch(`${process.env.AI_URL}/normalize/batch`, {
+      resposta = await fetch(`${process.env.AI_URL}${caminho}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -281,20 +318,9 @@ export class NormalizationService {
     } catch {
       throw new ServiceUnavailableException({ erro: 'ai_indisponivel' });
     }
-    if (resposta.status === 503) return 'sem_llm' as const;
+    if (resposta.status === 503) return 'sem_llm';
     if (!resposta.ok)
       throw new ServiceUnavailableException({ erro: 'llm_indisponivel' });
-    return (await resposta.json()) as RespostaIa;
-  }
-
-  private async enviarParaRevisao(lote: ItemPendente[]) {
-    await this.prisma.itemNormalization.createMany({
-      data: lote.map((item) => ({
-        receipt_item_id: item.id,
-        confianca: 0,
-        origem: 'llm' as const,
-        em_revisao: true,
-      })),
-    });
+    return (await resposta.json()) as T;
   }
 }

@@ -31,11 +31,14 @@ const normalizacao = (form: FormData) => ({
   categoria: campo(form, "categoria"),
 });
 
-// Sem autenticação nesta etapa: a validação de cada campo fica na api.
+// A validação de cada campo fica na api.
 export async function importar(_: Estado, form: FormData): Promise<Estado> {
   let id: unknown;
   try {
-    ({ id } = await api<{ id: number }>("/receipts/qr", "POST", { url: campo(form, "url") }));
+    ({ id } = await api<{ id: number }>("/receipts/qr", "POST", {
+      url: campo(form, "url"),
+      usar_ia: form.get("usar_ia") === "on",
+    }));
   } catch (erro) {
     if (!(erro instanceof ErroApi)) throw erro;
     if (erro.codigo !== "cupom_ja_importado") return { erro: erro.message };

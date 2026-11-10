@@ -84,6 +84,28 @@ describe('POST /receipts/qr', () => {
     await app.close();
   });
 
+  it('a escolha de IA vale para o cupom e vira a preferência do usuário', async () => {
+    aiResponde(200, cupom);
+    await comLogin(app).post('/receipts/qr').send({ url: URL_QR, usar_ia: false }).expect(201);
+    const { rows } = await db.query(
+      `SELECT r.usar_ia AS cupom, u.usar_ia AS preferencia
+       FROM receipts r JOIN users u ON u.id = r.user_id WHERE r.chave_acesso = $1`,
+      [CHAVE],
+    );
+    expect(rows).toEqual([{ cupom: false, preferencia: false }]);
+
+    await limpar();
+    await enviar().expect(201); // sem escolha, vale a preferência
+    const { rows: depois } = await db.query(
+      'SELECT usar_ia FROM receipts WHERE chave_acesso = $1',
+      [CHAVE],
+    );
+    expect(depois).toEqual([{ usar_ia: false }]);
+    await db.query('UPDATE users SET usar_ia = true WHERE id = 1');
+
+    await comLogin(app).post('/receipts/qr').send({ url: URL_QR, usar_ia: 'nao' }).expect(400);
+  });
+
   it('salva cupom, loja e itens como confirmado', async () => {
     aiResponde(200, cupom);
     const resposta = await enviar().expect(201);
