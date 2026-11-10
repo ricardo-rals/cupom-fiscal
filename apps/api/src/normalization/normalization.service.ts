@@ -43,27 +43,34 @@ const canonico = (texto: string) =>
     .replace(/\s+/g, ' ')
     .trim();
 
-export const chaveDeProduto = (produto: {
-  produto: string;
-  marca: string;
-  conteudo: number;
-  unidade_padrao: UnidadePadrao;
-}) => ({
+export const chaveDeProduto = (
+  produto: {
+    produto: string;
+    marca: string;
+    conteudo: number;
+    unidade_padrao: UnidadePadrao;
+  },
+  user_id: number,
+) => ({
+  user_id,
   nome_canonico: canonico(produto.produto),
   marca: canonico(produto.marca),
   conteudo: produto.conteudo.toFixed(4),
   unidade_padrao: produto.unidade_padrao,
 });
 
-/** Vale para todo uso de LLM no mês: normalização e agente somam no mesmo limite. */
-export async function limiteDeGastoAtingido(prisma: PrismaService) {
+/** Vale para todo uso de LLM do usuário no mês: normalização e agente somam no mesmo limite. */
+export async function limiteDeGastoAtingido(
+  prisma: PrismaService,
+  usuario: number,
+) {
   const limite = Number(process.env.LLM_LIMITE_MENSAL_USD ?? 5);
   const agora = new Date();
   const inicioDoMes = new Date(
     Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), 1),
   );
   const { _sum } = await prisma.llmCall.aggregate({
-    where: { criado_em: { gte: inicioDoMes } },
+    where: { user_id: usuario, criado_em: { gte: inicioDoMes } },
     _sum: { custo: true },
   });
   return Number(_sum.custo ?? 0) >= limite;
@@ -83,21 +90,23 @@ export class NormalizationService {
       },
     });
 
-    const pendentes = await this.resolverSemLlm(cupom.items, cupom.store.cnpj);
+    const usuario = cupom.user_id;
+    const cnpj = cupom.store.cnpj;
+    const pendentes = await this.resolverSemLlm(cupom.items, cnpj, usuario);
 
     if (pendentes.length > 0) {
-      const correcoes = await this.correcoes();
+      const correcoes = await this.correcoes(usuario);
       const lotes: ItemPendente[][] = [];
       for (let i = 0; i < pendentes.length; i += TAMANHO_DO_LOTE)
         lotes.push(pendentes.slice(i, i + TAMANHO_DO_LOTE));
       // Só as chamadas à IA vão em paralelo: o tempo do cupom é o do lote mais lento.
       // A gravação segue em ordem, porque lotes diferentes podem criar o mesmo produto.
       const respostas = await Promise.allSettled(
-        lotes.map((lote) => this.consultarLote(lote, correcoes)),
+        lotes.map((lote) => this.consultarLote(lote, correcoes, usuario)),
       );
       for (const [i, resposta] of respostas.entries()) {
         if (resposta.status === 'fulfilled')
-          await this.gravarLote(lotes[i], resposta.value, cupom.store.cnpj);
+          await this.gravarLote(lotes[i], resposta.value, cnpj, usuario);
       }
       // Os lotes bons ficam gravados; a falha devolve o cupom à fila só com o resto.
       const falha = respostas.find((r) => r.status === 'rejected');
@@ -111,15 +120,23 @@ export class NormalizationService {
   }
 
   /** Correção do usuário vence o cache, e os dois evitam chamar o LLM. */
-  private async resolverSemLlm(itens: ItemPendente[], cnpj: string) {
+  private async resolverSemLlm(
+    itens: ItemPendente[],
+    cnpj: string,
+    usuario: number,
+  ) {
     const descricoes = [...new Set(itens.map((i) => i.descricao_original))];
     const [rotulos, caches] = await Promise.all([
       this.prisma.userLabel.findMany({
-        where: { descricao_original: { in: descricoes } },
+        where: { user_id: usuario, descricao_original: { in: descricoes } },
         orderBy: { id: 'asc' }, // o mais novo sobrescreve no Map
       }),
       this.prisma.normalizationCache.findMany({
-        where: { cnpj, descricao_original: { in: descricoes } },
+        where: {
+          user_id: usuario,
+          cnpj,
+          descricao_original: { in: descricoes },
+        },
       }),
     ]);
     const correcoes = new Map(
@@ -147,8 +164,9 @@ export class NormalizationService {
     return pendentes;
   }
 
-  private async correcoes() {
+  private async correcoes(usuario: number) {
     const rotulos = await this.prisma.userLabel.findMany({
+      where: { user_id: usuario },
       include: { product: true, category: true },
     });
     return rotulos.map((r) => ({
@@ -161,8 +179,13 @@ export class NormalizationService {
     }));
   }
 
-  private async consultarLote(lote: ItemPendente[], correcoes: unknown[]) {
-    if (await limiteDeGastoAtingido(this.prisma)) return 'sem_llm' as const;
+  private async consultarLote(
+    lote: ItemPendente[],
+    correcoes: unknown[],
+    usuario: number,
+  ) {
+    if (await limiteDeGastoAtingido(this.prisma, usuario))
+      return 'sem_llm' as const;
     return this.chamarIa(lote, correcoes);
   }
 
@@ -170,6 +193,7 @@ export class NormalizationService {
     lote: ItemPendente[],
     resposta: RespostaIa | 'sem_llm',
     cnpj: string,
+    usuario: number,
   ) {
     if (resposta === 'sem_llm') return this.enviarParaRevisao(lote);
 
@@ -181,7 +205,7 @@ export class NormalizationService {
 
     await this.prisma.$transaction(async (tx) => {
       const chamada = await tx.llmCall.create({
-        data: { finalidade: FINALIDADE, ...resposta.chamada },
+        data: { user_id: usuario, finalidade: FINALIDADE, ...resposta.chamada },
       });
       const comum = {
         llm_call_id: chamada.id,
@@ -204,9 +228,9 @@ export class NormalizationService {
           continue;
         }
 
-        const chave = chaveDeProduto(normalizado);
+        const chave = chaveDeProduto(normalizado, usuario);
         const produto = await tx.product.upsert({
-          where: { nome_canonico_marca_conteudo_unidade_padrao: chave },
+          where: { user_id_nome_canonico_marca_conteudo_unidade_padrao: chave },
           create: { ...chave, category_id: categoryId },
           update: {},
         });
@@ -223,9 +247,13 @@ export class NormalizationService {
         });
         // Palpite duvidoso não entra no cache, senão se repetiria sem passar pela revisão.
         if (confiante) {
-          const id = { descricao_original: item.descricao_original, cnpj };
+          const id = {
+            user_id: usuario,
+            descricao_original: item.descricao_original,
+            cnpj,
+          };
           await tx.normalizationCache.upsert({
-            where: { descricao_original_cnpj: id },
+            where: { user_id_descricao_original_cnpj: id },
             create: { ...id, product_id: produto.id },
             update: { product_id: produto.id },
           });

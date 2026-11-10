@@ -41,21 +41,47 @@ enum UnidadePadrao {
   @@map("unidade_padrao")
 }
 
+// Dono dos dados. O usuário 1 guarda o que existia antes do login: o primeiro login com
+// OWNER_EMAIL assume essa linha.
+model User {
+  id                 Int                  @id @default(autoincrement())
+  google_id          String?              @unique
+  email              String?              @unique
+  nome               String               @default("")
+  usar_ia            Boolean              @default(true)
+  criado_em          DateTime             @default(now()) @db.Timestamptz
+  stores             Store[]
+  receipts           Receipt[]
+  products           Product[]
+  normalizationCache NormalizationCache[]
+  userLabels         UserLabel[]
+  forecasts          Forecast[]
+  llmCalls           LlmCall[]
+
+  @@map("users")
+}
+
+// Daqui para baixo tudo é por usuário, menos categorias e IPCA.
 model Store {
   id       Int       @id @default(autoincrement())
-  cnpj     String    @unique @db.Char(14)
+  user_id  Int
+  user     User      @relation(fields: [user_id], references: [id])
+  cnpj     String    @db.Char(14)
   nome     String
   cidade   String?
   receipts Receipt[]
 
+  @@unique([user_id, cnpj])
   @@map("stores")
 }
 
 model Receipt {
   id           Int           @id @default(autoincrement())
+  user_id      Int
+  user         User          @relation(fields: [user_id], references: [id])
   store_id     Int
   store        Store         @relation(fields: [store_id], references: [id])
-  chave_acesso String        @unique @db.Char(44)
+  chave_acesso String        @db.Char(44)
   emitido_em   DateTime      @db.Timestamptz
   total        Decimal       @db.Decimal(12, 2)
   desconto     Decimal       @default(0) @db.Decimal(12, 2)
@@ -66,6 +92,7 @@ model Receipt {
   criado_em    DateTime      @default(now()) @db.Timestamptz
   items        ReceiptItem[]
 
+  @@unique([user_id, chave_acesso])
   @@map("receipts")
 }
 
@@ -101,6 +128,8 @@ model Category {
 
 model Product {
   id                 Int                  @id @default(autoincrement())
+  user_id            Int
+  user               User                 @relation(fields: [user_id], references: [id])
   nome_canonico      String
   marca              String               @default("")
   conteudo           Decimal              @db.Decimal(12, 4)
@@ -112,7 +141,7 @@ model Product {
   userLabels         UserLabel[]
   forecasts          Forecast[]
 
-  @@unique([nome_canonico, marca, conteudo, unidade_padrao])
+  @@unique([user_id, nome_canonico, marca, conteudo, unidade_padrao])
   @@map("products")
 }
 
@@ -134,18 +163,22 @@ model ItemNormalization {
 }
 
 model NormalizationCache {
+  user_id            Int
+  user               User     @relation(fields: [user_id], references: [id])
   descricao_original String
   cnpj               String   @db.Char(14)
   product_id         Int
   product            Product  @relation(fields: [product_id], references: [id])
   criado_em          DateTime @default(now()) @db.Timestamptz
 
-  @@id([descricao_original, cnpj])
+  @@id([user_id, descricao_original, cnpj])
   @@map("normalization_cache")
 }
 
 model UserLabel {
   id                 Int      @id @default(autoincrement())
+  user_id            Int
+  user               User     @relation(fields: [user_id], references: [id])
   descricao_original String
   product_id         Int
   product            Product  @relation(fields: [product_id], references: [id])
@@ -153,12 +186,15 @@ model UserLabel {
   category           Category @relation(fields: [category_id], references: [id])
   criado_em          DateTime @default(now()) @db.Timestamptz
 
+  @@index([user_id, descricao_original])
   @@map("user_labels")
 }
 
 // Exatamente um entre product_id e category_id: check na migration.
 model Forecast {
   id              Int       @id @default(autoincrement())
+  user_id         Int
+  user            User      @relation(fields: [user_id], references: [id])
   product_id      Int?
   product         Product?  @relation(fields: [product_id], references: [id])
   category_id     Int?
@@ -171,6 +207,7 @@ model Forecast {
   mae_validacao   Decimal?  @db.Decimal(14, 4)
   criado_em       DateTime  @default(now()) @db.Timestamptz
 
+  @@index([user_id])
   @@map("forecasts")
 }
 
@@ -183,6 +220,8 @@ model IpcaMonthly {
 
 model LlmCall {
   id             Int                 @id @default(autoincrement())
+  user_id        Int
+  user           User                @relation(fields: [user_id], references: [id])
   finalidade     String
   modelo         String
   tokens_in      Int
@@ -193,6 +232,7 @@ model LlmCall {
   criado_em      DateTime            @default(now()) @db.Timestamptz
   normalizations ItemNormalization[]
 
+  @@index([user_id, criado_em])
   @@map("llm_calls")
 }
 

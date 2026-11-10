@@ -1,9 +1,9 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import pg from 'pg';
-import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { AppModule } from './../src/app.module.js';
+import { comLogin } from './login.js';
 
 const PADRAO_CPF = /(?<!\d)\d{3}\.?\d{3}\.?\d{3}-?\d{2}(?!\d)/;
 const MARCADOR = '000.000.000-00'; // inválido de propósito: nunca é o CPF de alguém
@@ -41,7 +41,7 @@ describe('anti-vazamento de CPF', () => {
     );
     const url = `${URL_BASE}?cpf=${cpf}&caso=${encodeURIComponent(_)}`;
 
-    await request(app.getHttpServer()).post('/receipts/qr').send({ url }).expect(502);
+    await comLogin(app).post('/receipts/qr').send({ url }).expect(502);
 
     const { rows } = await db.query<{ url: string }>(
       'SELECT url FROM import_errors WHERE url LIKE $1',

@@ -48,9 +48,12 @@ function validar(
 export class ReviewService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async listar() {
+  async listar(usuario: number) {
     const pendentes = await this.prisma.itemNormalization.findMany({
-      where: { em_revisao: true },
+      where: {
+        em_revisao: true,
+        receiptItem: { receipt: { user_id: usuario } },
+      },
       orderBy: { receipt_item_id: 'asc' },
       include: {
         product: { include: { category: true } },
@@ -85,31 +88,48 @@ export class ReviewService {
     return categorias.map((c) => c.nome);
   }
 
-  async resolver(itemId: number, corpo: Parameters<typeof validar>[0]) {
+  async resolver(
+    itemId: number,
+    usuario: number,
+    corpo: Parameters<typeof validar>[0],
+  ) {
     const resolucao = validar(corpo);
     const pendente = await this.prisma.itemNormalization.findFirst({
-      where: { receipt_item_id: itemId, em_revisao: true },
+      where: {
+        receipt_item_id: itemId,
+        em_revisao: true,
+        receiptItem: { receipt: { user_id: usuario } },
+      },
       include: { receiptItem: true },
     });
     if (!pendente)
       throw new NotFoundException({ erro: 'item_fora_da_revisao' });
     return this.aplicar(
       itemId,
+      usuario,
       pendente.receiptItem.descricao_original,
       resolucao,
     );
   }
 
   /** Corrige um item já normalizado, esteja ou não na fila (RF03). */
-  async corrigir(itemId: number, corpo: Parameters<typeof validar>[0]) {
+  async corrigir(
+    itemId: number,
+    usuario: number,
+    corpo: Parameters<typeof validar>[0],
+  ) {
     const resolucao = validar(corpo);
-    const atual = await this.prisma.itemNormalization.findUnique({
-      where: { receipt_item_id: itemId },
+    const atual = await this.prisma.itemNormalization.findFirst({
+      where: {
+        receipt_item_id: itemId,
+        receiptItem: { receipt: { user_id: usuario } },
+      },
       include: { receiptItem: true },
     });
     if (!atual) throw new NotFoundException({ erro: 'item_sem_normalizacao' });
     return this.aplicar(
       itemId,
+      usuario,
       atual.receiptItem.descricao_original,
       resolucao,
     );
@@ -118,6 +138,7 @@ export class ReviewService {
   /** A correção vale para os itens iguais na fila e vira rótulo para as próximas compras. */
   private async aplicar(
     itemId: number,
+    usuario: number,
     descricao: string,
     resolucao: Resolucao,
   ) {
@@ -128,19 +149,20 @@ export class ReviewService {
     if (!categoria)
       throw new BadRequestException({ erro: 'categoria_invalida' });
 
-    const chave = chaveDeProduto(resolucao);
+    const chave = chaveDeProduto(resolucao, usuario);
 
     return this.prisma.$transaction(async (tx) => {
       const produto = await tx.product.upsert({
-        where: { nome_canonico_marca_conteudo_unidade_padrao: chave },
+        where: { user_id_nome_canonico_marca_conteudo_unidade_padrao: chave },
         create: { ...chave, category_id: categoria.id },
         update: { category_id: categoria.id },
       });
       await tx.userLabel.deleteMany({
-        where: { descricao_original: descricao },
+        where: { user_id: usuario, descricao_original: descricao },
       });
       await tx.userLabel.create({
         data: {
+          user_id: usuario,
           descricao_original: descricao,
           product_id: produto.id,
           category_id: categoria.id,
@@ -152,7 +174,10 @@ export class ReviewService {
             { receipt_item_id: itemId },
             {
               em_revisao: true,
-              receiptItem: { descricao_original: descricao },
+              receiptItem: {
+                descricao_original: descricao,
+                receipt: { user_id: usuario },
+              },
             },
           ],
         },

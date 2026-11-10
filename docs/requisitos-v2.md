@@ -30,7 +30,8 @@ Aceite: cupom de 46 itens normalizado em menos de 1/2 do tempo atual, medido ant
 ## Etapa 1: login e dados por usuário
 
 - Tabela `users` (id do Google, e-mail, nome, preferência de IA).
-- `user_id` em `receipts`, `user_labels`, `forecasts`, `llm_calls`. Produtos, categorias e o cache de normalização continuam compartilhados (não têm dado pessoal).
+- `user_id` em mercados, cupons, produtos, cache de normalização, correções, previsões e chamadas ao LLM. Só categorias e IPCA são de todos.
+  - Mudança em relação à primeira versão: produtos e cache iam ser compartilhados, mas a correção de um usuário trocaria a categoria do produto do outro, e renomear um mercado mudaria o nome para todos. Separar tudo por usuário é mais simples e não vaza nada.
 - `chave_acesso` passa a ser única **por usuário**.
 - O web assina um token curto para cada chamada à api; a api recusa sem token.
 - Agente de perguntas: as views filtram por `current_setting('app.user_id')`, definido pela api na transação. O validador de SQL bloqueia `set_config` e `SET`. O isolamento fica no banco, não no prompt.

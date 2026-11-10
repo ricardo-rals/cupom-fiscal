@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   Post,
 } from '@nestjs/common';
+import { Usuario } from '../auth/auth.guard.js';
 import { ReviewService } from './review.service.js';
 
 @Controller('review-queue')
@@ -14,8 +15,8 @@ export class ReviewController {
   constructor(private readonly revisao: ReviewService) {}
 
   @Get()
-  listar() {
-    return this.revisao.listar();
+  listar(@Usuario() usuario: number) {
+    return this.revisao.listar(usuario);
   }
 
   @Get('categories')
@@ -27,8 +28,9 @@ export class ReviewController {
   @HttpCode(200)
   resolver(
     @Param('itemId', ParseIntPipe) itemId: number,
-    @Body() corpo: Parameters<ReviewService['resolver']>[1],
+    @Usuario() usuario: number,
+    @Body() corpo: Parameters<ReviewService['resolver']>[2],
   ) {
-    return this.revisao.resolver(itemId, corpo);
+    return this.revisao.resolver(itemId, usuario, corpo);
   }
 }

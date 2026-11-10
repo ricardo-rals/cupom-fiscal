@@ -49,7 +49,7 @@ export class AskService implements OnModuleInit {
     this.logger.log('login do agent_ro habilitado');
   }
 
-  async perguntar(corpo: { pergunta?: unknown } | undefined) {
+  async perguntar(corpo: { pergunta?: unknown } | undefined, usuario: number) {
     const pergunta = corpo?.pergunta;
     if (
       typeof pergunta !== 'string' ||
@@ -58,7 +58,7 @@ export class AskService implements OnModuleInit {
     ) {
       throw new BadRequestException({ erro: 'pergunta_invalida' });
     }
-    if (await limiteDeGastoAtingido(this.prisma)) {
+    if (await limiteDeGastoAtingido(this.prisma, usuario)) {
       throw new HttpException({ erro: 'limite_de_gasto' }, 429);
     }
 
@@ -67,7 +67,7 @@ export class AskService implements OnModuleInit {
       resposta = await fetch(`${process.env.AI_URL}/agent/ask`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pergunta: pergunta.trim() }),
+        body: JSON.stringify({ pergunta: pergunta.trim(), user_id: usuario }),
         signal: AbortSignal.timeout(TIMEOUT_AI_MS),
       });
     } catch {
@@ -88,7 +88,11 @@ export class AskService implements OnModuleInit {
       (await resposta.json()) as RespostaAgente;
     // Recusa também custa: o limite mensal conta todas as chamadas.
     await this.prisma.llmCall.createMany({
-      data: chamadas.map((c) => ({ finalidade: FINALIDADE, ...c })),
+      data: chamadas.map((c) => ({
+        user_id: usuario,
+        finalidade: FINALIDADE,
+        ...c,
+      })),
     });
     return resultado;
   }

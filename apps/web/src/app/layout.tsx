@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
+import { Suspense } from "react";
+import { auth, signOut } from "@/auth";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -18,6 +20,25 @@ export const metadata: Metadata = {
   description: "Controle de compras por cupom fiscal com IA",
 };
 
+async function Conta() {
+  const sessao = await auth();
+  if (!sessao?.user) return null;
+  return (
+    <form
+      className="ml-auto flex items-center gap-3 text-sm text-suave"
+      action={async () => {
+        "use server";
+        await signOut({ redirectTo: "/login" });
+      }}
+    >
+      <span className="hidden sm:inline">{sessao.user.name ?? sessao.user.email}</span>
+      <button type="submit" className="underline">
+        Sair
+      </button>
+    </form>
+  );
+}
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -26,13 +47,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <nav className="border-b border-borda">
-          <div className="mx-auto flex max-w-3xl gap-6 px-4 py-3 sm:px-6">
+          <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:px-6">
             <Link href="/" className="font-semibold">
               Cupom fiscal
             </Link>
             <Link href="/dashboard">Dashboard</Link>
             <Link href="/perguntas">Perguntas</Link>
             <Link href="/revisao">Revisão</Link>
+            <Suspense>
+              <Conta />
+            </Suspense>
           </div>
         </nav>
         <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">{children}</main>

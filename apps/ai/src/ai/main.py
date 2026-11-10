@@ -29,6 +29,7 @@ class ForecastRequest(BaseModel):
 
 class AskRequest(BaseModel):
     pergunta: str = Field(min_length=1, max_length=500)
+    user_id: int = Field(gt=0)
 
 
 class NfceParseRequest(BaseModel):
@@ -71,7 +72,7 @@ def forecast_run(body: ForecastRequest) -> dict[str, dict | None]:
 @app.post("/agent/ask")
 def agent_ask(body: AskRequest) -> RespostaAgente:
     try:
-        return perguntar(body.pergunta)
+        return perguntar(body.pergunta, usuario=body.user_id)
     except LlmNaoConfigurado:
         raise HTTPException(503, "llm_nao_configurado") from None
     except AgenteNaoConfigurado:

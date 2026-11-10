@@ -1,4 +1,5 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { Usuario } from '../auth/auth.guard.js';
 import { AskService } from './ask.service.js';
 
 @Controller('ask')
@@ -7,7 +8,10 @@ export class AskController {
 
   @Post()
   @HttpCode(200)
-  perguntar(@Body() corpo: Parameters<AskService['perguntar']>[0]) {
-    return this.agente.perguntar(corpo);
+  perguntar(
+    @Body() corpo: Parameters<AskService['perguntar']>[0],
+    @Usuario() usuario: number,
+  ) {
+    return this.agente.perguntar(corpo, usuario);
   }
 }

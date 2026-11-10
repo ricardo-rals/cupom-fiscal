@@ -1,3 +1,7 @@
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
+import { assinarToken } from "./token";
+
 const MENSAGENS: Record<string, string> = {
   url_invalida: "Cole a URL do QR code do cupom.",
   url_nao_permitida: "Essa URL não é da Sefaz da Bahia.",
@@ -30,17 +34,27 @@ export class ErroApi extends Error {
   }
 }
 
+/** Chamada à api em nome do usuário logado; sem sessão, vai para o login. */
 export async function api<T>(caminho: string, metodo = "GET", corpo?: object): Promise<T> {
+  const sessao = await auth();
+  const conta = sessao?.user;
+  if (!conta?.id) redirect("/login");
+  const token = assinarToken(
+    { sub: conta.id, email: conta.email ?? undefined, nome: conta.name ?? undefined },
+    process.env.API_TOKEN_SECRET ?? "",
+  );
+
   let resposta: Response;
   try {
     resposta = await fetch(`${process.env.API_URL}${caminho}`, {
       method: metodo,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: corpo && JSON.stringify(corpo),
     });
   } catch {
     throw new ErroApi("api_indisponivel");
   }
+  if (resposta.status === 401) redirect("/login");
   const dados = await resposta.json().catch(() => ({}));
   if (!resposta.ok) throw new ErroApi(dados.erro ?? "erro", dados);
   return dados as T;

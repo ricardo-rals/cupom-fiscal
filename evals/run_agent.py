@@ -52,6 +52,7 @@ TABELAS_VIGIADAS = [
     "import_errors",
 ]
 TENTATIVAS = 6
+USUARIO = 1  # o seed grava tudo no usuário 1, o mesmo que a migration de login cria
 ESPERA_S = 60
 CASAS = 2
 
@@ -173,7 +174,7 @@ def conferir_gabarito(perguntas: list[dict]) -> dict[int, list[list]]:
         if "sql" not in p:
             continue
         consulta = validar(p["sql"])  # o gabarito também passa pelo validador do agente
-        _, linhas = executar(consulta)
+        _, linhas = executar(consulta, USUARIO)
         if not linhas or all(v is None for v in linhas[0]):
             print(f"aviso: pergunta {p['id']} tem gabarito vazio")
         esperados[p["id"]] = linhas
@@ -206,7 +207,7 @@ def rodar(todas: list[dict], hoje: date) -> dict:
             continue
         for tentativa in range(1, TENTATIVAS + 1):
             try:
-                resultado = perguntar(p["pergunta"], hoje=hoje)
+                resultado = perguntar(p["pergunta"], hoje=hoje, usuario=USUARIO)
                 break
             except LlmIndisponivel as erro:
                 print(f"pergunta {p['id']}: tentativa {tentativa}, {erro}")

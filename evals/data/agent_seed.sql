@@ -1,12 +1,13 @@
 -- Compras SINTÉTICAS e determinísticas para avaliar o agente: maio a outubro de 2026,
 -- 3 mercados e 12 produtos. As respostas certas saem do SQL de gabarito sobre estes dados.
-INSERT INTO stores (cnpj, nome, cidade) VALUES
-  ('90000000000101', 'ATACADAO CENTRO', 'SALVADOR'),
-  ('90000000000202', 'MERCADINHO BOM PRECO', 'SALVADOR'),
-  ('90000000000303', 'SUPERMERCADO BAHIA', 'SALVADOR');
+-- Tudo no usuário 1, que a migration de login cria; o agente roda com app.user_id = 1.
+INSERT INTO stores (user_id, cnpj, nome, cidade) VALUES
+  (1, '90000000000101', 'ATACADAO CENTRO', 'SALVADOR'),
+  (1, '90000000000202', 'MERCADINHO BOM PRECO', 'SALVADOR'),
+  (1, '90000000000303', 'SUPERMERCADO BAHIA', 'SALVADOR');
 
-INSERT INTO products (nome_canonico, marca, conteudo, unidade_padrao, category_id)
-SELECT v.nome, v.marca, v.conteudo, v.unidade::unidade_padrao, c.id
+INSERT INTO products (user_id, nome_canonico, marca, conteudo, unidade_padrao, category_id)
+SELECT 1, v.nome, v.marca, v.conteudo, v.unidade::unidade_padrao, c.id
 FROM (VALUES
   ('leite integral', 'italac', 1, 'l', 'Leite'),
   ('arroz tipo 1', 'camil', 5, 'kg', 'Arroz e feijão'),
@@ -47,8 +48,8 @@ BEGIN
   FOR m IN 0..5 LOOP
     FOR s IN 1..3 LOOP
       n := n + 1;
-      INSERT INTO receipts (store_id, chave_acesso, emitido_em, total, origem, status)
-      VALUES (mercados[s], '29' || lpad(n::text, 42, '0'),
+      INSERT INTO receipts (user_id, store_id, chave_acesso, emitido_em, total, origem, status)
+      VALUES (1, mercados[s], '29' || lpad(n::text, 42, '0'),
               make_timestamptz(2026, 5 + m, 3 + 8 * s, 10 + s, 0, 0, 'America/Bahia'), 0, 'qr', 'normalizado')
       RETURNING id INTO cupom;
       soma := 0;

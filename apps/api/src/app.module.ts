@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller.js';
+import { AuthGuard } from './auth/auth.guard.js';
 import { AskController } from './ask/ask.controller.js';
 import { AskService } from './ask/ask.service.js';
 import { DashboardController } from './dashboard/dashboard.controller.js';
@@ -24,6 +26,8 @@ import { ReviewService } from './review/review.service.js';
     AskController,
   ],
   providers: [
+    // Toda rota exige login, menos as marcadas com @Publico().
+    { provide: APP_GUARD, useClass: AuthGuard },
     PrismaService,
     ReceiptsService,
     NormalizationService,

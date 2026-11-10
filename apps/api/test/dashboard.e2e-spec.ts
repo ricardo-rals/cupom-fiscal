@@ -1,9 +1,9 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import pg from 'pg';
-import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { AppModule } from './../src/app.module.js';
+import { comLogin } from './login.js';
 
 const CNPJS = ['00000000000515', '00000000000606'];
 const PREFIXO = '33';
@@ -18,7 +18,7 @@ describe('dashboard e histórico de preços (RF05, RF06)', () => {
   let sequencia = 0;
 
   const resumo = (query: Record<string, string | number>) =>
-    request(app.getHttpServer()).get('/dashboard/summary').query(query);
+    comLogin(app).get('/dashboard/summary').query(query);
 
   const limpar = async () => {
     await db.query('DELETE FROM receipts WHERE chave_acesso LIKE $1', [
@@ -32,8 +32,8 @@ describe('dashboard e histórico de preços (RF05, RF06)', () => {
 
   const produto = async (nome: string, conteudo: number, categoria: string) => {
     const { rows } = await db.query<{ id: number }>(
-      `INSERT INTO products (nome_canonico, conteudo, unidade_padrao, category_id)
-       SELECT $1, $2, 'l', id FROM categories WHERE nome = $3 RETURNING id`,
+      `INSERT INTO products (user_id, nome_canonico, conteudo, unidade_padrao, category_id)
+       SELECT 1, $1, $2, 'l', id FROM categories WHERE nome = $3 RETURNING id`,
       [`${MARCADOR} ${nome}`, conteudo, categoria],
     );
     return rows[0].id;
@@ -51,8 +51,8 @@ describe('dashboard e histórico de preços (RF05, RF06)', () => {
   }) => {
     sequencia += 1;
     const { rows } = await db.query<{ id: number }>(
-      `INSERT INTO receipts (store_id, chave_acesso, emitido_em, total, origem, status)
-       VALUES ($1, $2, $3, $4, 'qr', $5) RETURNING id`,
+      `INSERT INTO receipts (user_id, store_id, chave_acesso, emitido_em, total, origem, status)
+       VALUES (1, $1, $2, $3, $4, 'qr', $5) RETURNING id`,
       [
         opcoes.loja,
         `${PREFIXO}${String(sequencia).padStart(42, '0')}`,
@@ -85,7 +85,7 @@ describe('dashboard e histórico de preços (RF05, RF06)', () => {
     await app.init();
 
     const { rows } = await db.query<{ id: number }>(
-      `INSERT INTO stores (cnpj, nome) VALUES ($1, 'LOJA A'), ($2, 'LOJA B') RETURNING id`,
+      `INSERT INTO stores (user_id, cnpj, nome) VALUES (1, $1, 'LOJA A'), (1, $2, 'LOJA B') RETURNING id`,
       CNPJS,
     );
     lojas = rows.map((r) => r.id);
@@ -250,7 +250,7 @@ describe('dashboard e histórico de preços (RF05, RF06)', () => {
   });
 
   it('a série indica mercado e data, e calcula os dois preços', async () => {
-    const { body } = await request(app.getHttpServer())
+    const { body } = await comLogin(app)
       .get(`/products/${leite}/prices`)
       .expect(200);
     expect(body).toMatchObject({
@@ -276,7 +276,7 @@ describe('dashboard e histórico de preços (RF05, RF06)', () => {
       '2031-02-15T15:00:00.000Z',
     );
 
-    await request(app.getHttpServer())
+    await comLogin(app)
       .get('/products/999999999/prices')
       .expect(404);
   });

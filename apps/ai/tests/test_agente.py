@@ -121,7 +121,9 @@ def test_falha_no_banco_mostra_a_consulta_e_nao_chama_a_redacao() -> None:
 
 def test_endpoint_sem_chave_ou_sem_banco(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
-    resposta = TestClient(app).post("/agent/ask", json={"pergunta": "quanto gastei?"})
+    resposta = TestClient(app).post(
+        "/agent/ask", json={"pergunta": "quanto gastei?", "user_id": 1}
+    )
     assert (resposta.status_code, resposta.json()["detail"]) == (
         503,
         "llm_nao_configurado",
@@ -130,7 +132,9 @@ def test_endpoint_sem_chave_ou_sem_banco(monkeypatch: pytest.MonkeyPatch) -> Non
 
 @pytest.mark.parametrize("pergunta", ["", "x" * 501])
 def test_endpoint_recusa_pergunta_vazia_ou_longa(pergunta: str) -> None:
-    resposta = TestClient(app).post("/agent/ask", json={"pergunta": pergunta})
+    resposta = TestClient(app).post(
+        "/agent/ask", json={"pergunta": pergunta, "user_id": 1}
+    )
     assert resposta.status_code == 422
 
 
@@ -142,4 +146,4 @@ def test_sem_senha_do_agent_ro_o_agente_fica_desligado(
     if url:
         monkeypatch.setenv("AGENT_DATABASE_URL", url)
     with pytest.raises(AgenteNaoConfigurado):
-        executar("SELECT 1")
+        executar("SELECT 1", 1)

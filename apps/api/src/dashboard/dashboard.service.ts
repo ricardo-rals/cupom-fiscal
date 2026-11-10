@@ -32,9 +32,15 @@ const paraDia = (instante: Date) =>
 const comprasValidas = (
   inicio: Date,
   fim: Date,
-  filtros: { store?: number; category?: string; product?: number },
+  filtros: {
+    usuario: number;
+    store?: number;
+    category?: string;
+    product?: number;
+  },
 ): Prisma.ReceiptItemWhereInput => ({
   receipt: {
+    user_id: filtros.usuario,
     status: 'normalizado',
     emitido_em: { gte: inicio, lt: fim },
     store_id: filtros.store,
@@ -81,7 +87,7 @@ const somar = (itens: Parameters<typeof valorPago>[0][]) =>
 export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async resumo({ from, to, category, store }: Filtros) {
+  async resumo({ from, to, category, store }: Filtros, usuario: number) {
     const inicio = dia(from, 'from');
     const ultimoDia = dia(to, 'to');
     if (ultimoDia < inicio)
@@ -94,7 +100,11 @@ export class DashboardService {
     const fim = new Date(ultimoDia.getTime() + UM_DIA_MS);
     const duracao = fim.getTime() - inicio.getTime();
     const inicioAnterior = new Date(inicio.getTime() - duracao);
-    const recorte = { store: lojaId, category: category || undefined };
+    const recorte = {
+      usuario,
+      store: lojaId,
+      category: category || undefined,
+    };
 
     const [itens, anteriores, categorias, mercados] = await Promise.all([
       this.prisma.receiptItem.findMany({
@@ -114,7 +124,10 @@ export class DashboardService {
         where: { pai_id: { not: null } },
         orderBy: { nome: 'asc' },
       }),
-      this.prisma.store.findMany({ orderBy: { nome: 'asc' } }),
+      this.prisma.store.findMany({
+        where: { user_id: usuario },
+        orderBy: { nome: 'asc' },
+      }),
     ]);
 
     const total = somar(itens);
@@ -169,9 +182,9 @@ export class DashboardService {
     };
   }
 
-  async precos(id: number) {
-    const produto = await this.prisma.product.findUnique({
-      where: { id },
+  async precos(id: number, usuario: number) {
+    const produto = await this.prisma.product.findFirst({
+      where: { id, user_id: usuario },
       include: { category: true },
     });
     if (!produto)
@@ -179,6 +192,7 @@ export class DashboardService {
 
     const itens = await this.prisma.receiptItem.findMany({
       where: comprasValidas(new Date(0), new Date('9999-01-01'), {
+        usuario,
         product: id,
       }),
       include: { receipt: { include: { store: true } } },

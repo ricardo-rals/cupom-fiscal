@@ -52,6 +52,9 @@ services:
       LLM_LIMITE_MENSAL_USD: ${LLM_LIMITE_MENSAL_USD:-5}
       NORMALIZACAO_LIMIAR: ${NORMALIZACAO_LIMIAR:-0.8}
       AGENT_RO_PASSWORD: ${AGENT_RO_PASSWORD:-}
+      # Sem a chave a api recusa toda chamada; o mesmo valor vai para o web.
+      API_TOKEN_SECRET: ${API_TOKEN_SECRET:-}
+      OWNER_EMAIL: ${OWNER_EMAIL:-}
     ports: ["3001:3000"]
     depends_on:
       migrate: { condition: service_completed_successfully }
@@ -63,6 +66,10 @@ services:
       <<: *otel
       OTEL_SERVICE_NAME: web
       API_URL: http://api:3000
+      API_TOKEN_SECRET: ${API_TOKEN_SECRET:-}
+      AUTH_SECRET: ${AUTH_SECRET:-}
+      AUTH_GOOGLE_ID: ${AUTH_GOOGLE_ID:-}
+      AUTH_GOOGLE_SECRET: ${AUTH_GOOGLE_SECRET:-}
     ports: ["3000:3000"]
     depends_on: [api]
 

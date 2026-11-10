@@ -76,8 +76,9 @@ export class ReceiptsService {
     private readonly fila: NormalizationQueue,
   ) {}
 
-  async listar() {
+  async listar(usuario: number) {
     const cupons = await this.prisma.receipt.findMany({
+      where: { user_id: usuario },
       orderBy: { emitido_em: 'desc' },
       take: LISTA_MAX,
       include: { store: true, _count: { select: { items: true } } },
@@ -100,9 +101,10 @@ export class ReceiptsService {
     }));
   }
 
-  async situacao(id: number) {
-    const receipt = await this.prisma.receipt.findUnique({
-      where: { id },
+  /** Cupom de outro usuário responde como inexistente. */
+  async situacao(id: number, usuario: number) {
+    const receipt = await this.prisma.receipt.findFirst({
+      where: { id, user_id: usuario },
       include: {
         store: true,
         items: {
@@ -156,7 +158,7 @@ export class ReceiptsService {
   }
 
   /** O nome do mercado vale para todos os cupons dele; CNPJ e chave identificam e não mudam. */
-  async atualizar(id: number, corpo: Corpo) {
+  async atualizar(id: number, usuario: number, corpo: Corpo) {
     const emitido = new Date(texto(corpo, 'emitido_em', TEXTO_MAX));
     if (Number.isNaN(emitido.getTime())) throw invalido('emitido_em');
     const pagamento = texto(corpo, 'pagamento', TEXTO_MAX, true);
@@ -168,15 +170,26 @@ export class ReceiptsService {
       pagamento: pagamento || null,
       store: { update: { nome: texto(corpo, 'mercado', TEXTO_MAX) } },
     };
-    if (!(await this.prisma.receipt.findUnique({ where: { id } }))) {
-      throw new NotFoundException({ erro: 'cupom_nao_encontrado' });
-    }
+    await this.doUsuario(id, usuario);
     await this.prisma.receipt.update({ where: { id }, data: dados });
-    return this.situacao(id);
+    return this.situacao(id, usuario);
+  }
+
+  private async doUsuario(id: number, usuario: number) {
+    const cupom = await this.prisma.receipt.findFirst({
+      where: { id, user_id: usuario },
+    });
+    if (!cupom) throw new NotFoundException({ erro: 'cupom_nao_encontrado' });
+    return cupom;
   }
 
   /** Descrição nova invalida a normalização: o item volta para a fila. */
-  async atualizarItem(id: number, itemId: number, corpo: Corpo) {
+  async atualizarItem(
+    id: number,
+    usuario: number,
+    itemId: number,
+    corpo: Corpo,
+  ) {
     const quantidade = numero(corpo, 'quantidade', QUANTIDADE);
     if (Number(quantidade) <= 0) throw invalido('quantidade'); // as views dividem por ela
     const codigo = corpo?.codigo;
@@ -192,7 +205,7 @@ export class ReceiptsService {
     };
 
     const item = await this.prisma.receiptItem.findFirst({
-      where: { id: itemId, receipt_id: id },
+      where: { id: itemId, receipt_id: id, receipt: { user_id: usuario } },
       include: { receipt: true },
     });
     if (!item) throw new NotFoundException({ erro: 'item_nao_encontrado' });
@@ -214,36 +227,36 @@ export class ReceiptsService {
     });
     if (renormalizar && !(await this.fila.emAndamento(id)))
       await this.fila.enfileirar(id);
-    return this.situacao(id);
+    return this.situacao(id, usuario);
   }
 
   /** Retoma cupom parado; com job vivo não faz nada, para não pagar o LLM duas vezes. */
-  async retomar(id: number) {
-    const situacao = await this.situacao(id);
+  async retomar(id: number, usuario: number) {
+    const situacao = await this.situacao(id, usuario);
     if (!situacao.parada) return situacao;
     await this.fila.enfileirar(id);
     return { ...situacao, parada: false };
   }
 
   /** Foto sai de `rascunho` aqui; repetir em cupom já confirmado não muda nada. */
-  async confirmar(id: number) {
+  async confirmar(id: number, usuario: number) {
     const { count } = await this.prisma.receipt.updateMany({
-      where: { id, status: 'rascunho' },
+      where: { id, user_id: usuario, status: 'rascunho' },
       data: { status: 'confirmado' },
     });
-    const situacao = await this.situacao(id);
+    const situacao = await this.situacao(id, usuario);
     if (count > 0) await this.fila.enfileirar(id);
     return situacao;
   }
 
-  async importarPorQr(url: string) {
+  async importarPorQr(url: string, usuario: number) {
     const cupom = await this.consultarCupom(url);
 
-    const existente = await this.buscarPorChave(cupom.chave_acesso);
+    const existente = await this.buscarPorChave(usuario, cupom.chave_acesso);
     if (existente) throw this.jaImportado(existente.id);
 
     try {
-      const salvo = await this.salvar(cupom);
+      const salvo = await this.salvar(cupom, usuario);
       await this.fila.enfileirar(salvo.id);
       return salvo;
     } catch (erro) {
@@ -252,15 +265,17 @@ export class ReceiptsService {
         erro instanceof Prisma.PrismaClientKnownRequestError &&
         erro.code === 'P2002'
       ) {
-        const atual = await this.buscarPorChave(cupom.chave_acesso);
+        const atual = await this.buscarPorChave(usuario, cupom.chave_acesso);
         if (atual) throw this.jaImportado(atual.id);
       }
       throw erro;
     }
   }
 
-  private buscarPorChave(chave_acesso: string) {
-    return this.prisma.receipt.findUnique({ where: { chave_acesso } });
+  private buscarPorChave(user_id: number, chave_acesso: string) {
+    return this.prisma.receipt.findUnique({
+      where: { user_id_chave_acesso: { user_id, chave_acesso } },
+    });
   }
 
   private async consultarCupom(url: string): Promise<Cupom> {
@@ -322,12 +337,22 @@ export class ReceiptsService {
     );
   }
 
-  private async salvar(cupom: Cupom) {
-    const loja = { cnpj: cupom.cnpj, nome: cupom.nome, cidade: cupom.cidade };
+  private async salvar(cupom: Cupom, usuario: number) {
+    const dono = { connect: { id: usuario } };
+    const loja = {
+      cnpj: cupom.cnpj,
+      nome: cupom.nome,
+      cidade: cupom.cidade,
+      user: dono,
+    };
     const receipt = await this.prisma.receipt.create({
       data: {
+        user: dono,
         store: {
-          connectOrCreate: { where: { cnpj: cupom.cnpj }, create: loja },
+          connectOrCreate: {
+            where: { user_id_cnpj: { user_id: usuario, cnpj: cupom.cnpj } },
+            create: loja,
+          },
         },
         chave_acesso: cupom.chave_acesso,
         emitido_em: new Date(cupom.emitido_em),

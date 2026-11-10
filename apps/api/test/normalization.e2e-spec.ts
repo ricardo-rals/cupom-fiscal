@@ -43,14 +43,14 @@ describe('normalização de um cupom', () => {
 
   const criarCupom = async (descricoes: string[]) => {
     const { rows: lojas } = await db.query<{ id: number }>(
-      `INSERT INTO stores (cnpj, nome) VALUES ($1, 'LOJA') ON CONFLICT (cnpj)
+      `INSERT INTO stores (user_id, cnpj, nome) VALUES (1, $1, 'LOJA') ON CONFLICT (user_id, cnpj)
        DO UPDATE SET nome = 'LOJA' RETURNING id`,
       [CNPJ],
     );
     chaveSeq += 1;
     const { rows } = await db.query<{ id: number }>(
-      `INSERT INTO receipts (store_id, chave_acesso, emitido_em, total, origem, status)
-       VALUES ($1, $2, now(), 10, 'qr', 'confirmado') RETURNING id`,
+      `INSERT INTO receipts (user_id, store_id, chave_acesso, emitido_em, total, origem, status)
+       VALUES (1, $1, $2, now(), 10, 'qr', 'confirmado') RETURNING id`,
       [lojas[0].id, `28${String(chaveSeq).padStart(42, '0')}`],
     );
     const ids: number[] = [];
@@ -119,6 +119,8 @@ describe('normalização de um cupom', () => {
   beforeAll(async () => {
     db = new pg.Client({ connectionString: process.env.DATABASE_URL });
     await db.connect();
+    // As views só mostram o usuário declarado na sessão, como o agente faz.
+    await db.query("SELECT set_config('app.user_id', '1', false)");
     modulo = await Test.createTestingModule({ imports: [AppModule] }).compile();
     servico = modulo.get(NormalizationService);
   });
@@ -208,7 +210,7 @@ describe('normalização de um cupom', () => {
       `SELECT id FROM categories WHERE nome = 'Frutas'`,
     );
     await db.query(
-      'INSERT INTO user_labels (descricao_original, product_id, category_id) VALUES ($1, $2, $3)',
+      'INSERT INTO user_labels (user_id, descricao_original, product_id, category_id) VALUES (1, $1, $2, $3)',
       [`${PREFIXO} ROTULO`, produto, cat[0].id],
     );
 
@@ -271,8 +273,8 @@ describe('normalização de um cupom', () => {
 
   it('limite mensal atingido: não chama o LLM e manda para revisão', async () => {
     await db.query(
-      `INSERT INTO llm_calls (finalidade, modelo, tokens_in, tokens_out, custo, latencia_ms)
-       VALUES ('normalizacao', 'gemini-3.6-flash', 1, 1, 6, 1)`,
+      `INSERT INTO llm_calls (user_id, finalidade, modelo, tokens_in, tokens_out, custo, latencia_ms)
+       VALUES (1, 'normalizacao', 'gemini-3.6-flash', 1, 1, 6, 1)`,
     );
     const { receiptId, ids } = await criarCupom([`${PREFIXO} LIMITE`]);
     const chamadas = iaResolveTudo();

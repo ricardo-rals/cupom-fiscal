@@ -86,8 +86,12 @@ def _serializavel(valor: object) -> object:
     return valor
 
 
-def executar(sql: str) -> tuple[list[str], list[list]]:
-    """Conecta como agent_ro: só lê as views, e o tempo máximo vale também aqui."""
+def executar(sql: str, usuario: int) -> tuple[list[str], list[list]]:
+    """Conecta como agent_ro: só lê as views, e o tempo máximo vale também aqui.
+
+    As views filtram por app.user_id, definido aqui na mesma transação. A consulta do LLM
+    não consegue trocá-lo: o validador recusa SET, set_config e current_setting.
+    """
     url = os.environ.get("AGENT_DATABASE_URL")
     if not url or not urlsplit(url).password:  # o compose monta a URL mesmo sem senha
         raise AgenteNaoConfigurado
@@ -98,6 +102,9 @@ def executar(sql: str) -> tuple[list[str], list[list]]:
     ) as conexao:
         conexao.read_only = True
         with conexao.cursor() as cursor:
+            cursor.execute(
+                "SELECT set_config('app.user_id', %s, true)", (str(int(usuario)),)
+            )
             cursor.execute(sql)
             colunas = [c.name for c in cursor.description or []]
             linhas = cursor.fetchmany(LIMITE)
@@ -107,9 +114,15 @@ def executar(sql: str) -> tuple[list[str], list[list]]:
 def perguntar(
     pergunta: str,
     cliente: httpx.Client | None = None,
-    executor: Callable[[str], tuple[list[str], list[list]]] = executar,
+    executor: Callable[[str], tuple[list[str], list[list]]] | None = None,
     hoje: date | None = None,
+    *,
+    usuario: int | None = None,
 ) -> RespostaAgente:
+    if executor is None:
+        if usuario is None:
+            raise ValueError("sem usuário, a consulta não tem de quem ler")
+        executor = lambda sql: executar(sql, usuario)
     cliente = cliente or criar_cliente(TIMEOUT_S)
     hoje = hoje or datetime.now(FUSO).date()
     chamadas: list[Chamada] = []

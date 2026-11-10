@@ -61,7 +61,7 @@ export class ForecastService implements OnModuleInit {
     await this.fila.boss.createQueue(FILA);
     if (process.env.NORMALIZACAO_WORKER === 'off') return;
     await this.fila.boss.work(FILA, async () => {
-      await this.rodar();
+      await this.rodarTodos();
     });
     // Todo dia 1º, depois do fechamento do mês anterior.
     await this.fila.boss.schedule(FILA, '0 6 1 * *', null, {
@@ -70,7 +70,7 @@ export class ForecastService implements OnModuleInit {
   }
 
   /** Preço médio por unidade padrão em cada mês, com o mesmo recorte das views. */
-  private serieMensal(produtoId?: number) {
+  private serieMensal(usuario: number, produtoId?: number) {
     return this.prisma.$queryRaw<LinhaMensal[]>`
       SELECT p.id AS produto, p.category_id AS categoria,
              to_char(r.emitido_em AT TIME ZONE 'America/Bahia', 'YYYY-MM') AS mes,
@@ -79,7 +79,7 @@ export class ForecastService implements OnModuleInit {
       JOIN receipts r ON r.id = i.receipt_id
       JOIN item_normalizations n ON n.receipt_item_id = i.id
       JOIN products p ON p.id = n.product_id
-      WHERE r.status = 'normalizado' AND NOT n.em_revisao
+      WHERE r.status = 'normalizado' AND NOT n.em_revisao AND r.user_id = ${usuario}
         AND (${produtoId ?? null}::int IS NULL OR p.id = ${produtoId ?? null}::int)
       GROUP BY 1, 2, 3
       ORDER BY 3`;
@@ -110,9 +110,16 @@ export class ForecastService implements OnModuleInit {
     }));
   }
 
-  /** Refaz todas as previsões; produto com poucos meses usa a da categoria na leitura. */
-  async rodar() {
-    const linhas = await this.serieMensal();
+  /** O job mensal refaz as previsões de todos os usuários. */
+  async rodarTodos() {
+    const usuarios = await this.prisma.user.findMany({ select: { id: true } });
+    for (const { id } of usuarios) await this.rodar(id);
+  }
+
+  /** Refaz as previsões do usuário; produto com poucos meses usa a da categoria na leitura. */
+  async rodar(usuario: number) {
+    const linhas = await this.serieMensal(usuario);
+    if (!linhas.length) return { produtos: 0, categorias: 0 };
     const produtos = [...agrupar(linhas, (l) => l.produto)]
       .filter(([, serie]) => serie.length >= MESES_MIN)
       .map(([produto, serie]) => ({
@@ -151,6 +158,7 @@ export class ForecastService implements OnModuleInit {
       const escala = daCategoria ? previsao.ultimo : 1;
       for (const p of previsao.previsoes) {
         linhasNovas.push({
+          user_id: usuario,
           product_id: daCategoria ? null : alvo,
           category_id: daCategoria ? alvo : null,
           mes: new Date(`${p.mes}-01`),
@@ -163,7 +171,7 @@ export class ForecastService implements OnModuleInit {
       }
     }
     await this.prisma.$transaction([
-      this.prisma.forecast.deleteMany(),
+      this.prisma.forecast.deleteMany({ where: { user_id: usuario } }),
       this.prisma.forecast.createMany({ data: linhasNovas }),
     ]);
     this.logger.log(`previsões gravadas: ${linhasNovas.length}`);
@@ -175,15 +183,15 @@ export class ForecastService implements OnModuleInit {
     };
   }
 
-  async porProduto(id: number) {
-    const produto = await this.prisma.product.findUnique({
-      where: { id },
+  async porProduto(id: number, usuario: number) {
+    const produto = await this.prisma.product.findFirst({
+      where: { id, user_id: usuario },
       include: { category: true },
     });
     if (!produto)
       throw new NotFoundException({ erro: 'produto_nao_encontrado' });
 
-    const serie = await this.serieMensal(id);
+    const serie = await this.serieMensal(usuario, id);
     const ultimo = serie.at(-1)?.valor;
     const base = {
       categoria: produto.category.nome,
@@ -198,7 +206,7 @@ export class ForecastService implements OnModuleInit {
       proprias.length || ultimo === undefined
         ? []
         : await this.prisma.forecast.findMany({
-            where: { category_id: produto.category_id },
+            where: { user_id: usuario, category_id: produto.category_id },
             orderBy: { mes: 'asc' },
           });
     const linhas = proprias.length ? proprias : daCategoria;

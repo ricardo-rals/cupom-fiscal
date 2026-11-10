@@ -1,9 +1,9 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import pg from 'pg';
-import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { AppModule } from './../src/app.module.js';
+import { comLogin } from './login.js';
 
 const CNPJ = '00000000000191';
 const CHAVE = '29'.padEnd(44, '0');
@@ -56,7 +56,7 @@ describe('POST /receipts/qr', () => {
       'fetch',
       vi.fn(async () => Response.json(corpo, { status })),
     );
-  const enviar = () => request(app.getHttpServer()).post('/receipts/qr').send({ url: URL_QR });
+  const enviar = () => comLogin(app).post('/receipts/qr').send({ url: URL_QR });
   const contar = async (sql: string, valor: string) => {
     const { rows } = await db.query(`SELECT count(*)::int AS n FROM ${sql}`, [valor]);
     return rows[0].n as number;
@@ -179,7 +179,7 @@ describe('POST /receipts/qr', () => {
   it.each([[{}], [{ url: 123 }], [{ url: '   ' }], [{ url: 'x'.repeat(2049) }]])(
     'recusa corpo inválido %#',
     async (corpo) => {
-      await request(app.getHttpServer()).post('/receipts/qr').send(corpo).expect(400);
+      await comLogin(app).post('/receipts/qr').send(corpo).expect(400);
     },
   );
 });

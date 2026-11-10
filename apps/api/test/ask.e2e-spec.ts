@@ -1,9 +1,9 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import pg from 'pg';
-import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { AppModule } from './../src/app.module.js';
+import { comLogin, DONO } from './login.js';
 
 const MODELO = 'teste-agente';
 const SENHA = 'senha-agente-teste';
@@ -15,7 +15,7 @@ describe('agente de perguntas (RF09)', () => {
   let enviado: unknown;
 
   const perguntar = (corpo: object) =>
-    request(app.getHttpServer()).post('/ask').send(corpo);
+    comLogin(app).post('/ask').send(corpo);
 
   const chamada = {
     modelo: MODELO,
@@ -73,7 +73,7 @@ describe('agente de perguntas (RF09)', () => {
       sql: 'SELECT 1 LIMIT 500',
     });
     expect(body.chamadas).toBeUndefined();
-    expect(enviado).toEqual({ pergunta: 'Com o que gastei mais?' });
+    expect(enviado).toEqual({ pergunta: 'Com o que gastei mais?', user_id: DONO });
 
     const { rows } = await db.query(
       `SELECT finalidade, tokens_in FROM llm_calls WHERE modelo = $1`,
@@ -113,8 +113,8 @@ describe('agente de perguntas (RF09)', () => {
 
   it('com o limite de gasto do mês atingido, não chama o LLM', async () => {
     await db.query(
-      `INSERT INTO llm_calls (finalidade, modelo, tokens_in, tokens_out, custo, latencia_ms)
-       VALUES ('agente', $1, 1, 1, 999, 1)`,
+      `INSERT INTO llm_calls (user_id, finalidade, modelo, tokens_in, tokens_out, custo, latencia_ms)
+       VALUES (1, 'agente', $1, 1, 1, 999, 1)`,
       [MODELO],
     );
     enviado = undefined;

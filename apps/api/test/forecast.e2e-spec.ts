@@ -1,9 +1,9 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import pg from 'pg';
-import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { AppModule } from './../src/app.module.js';
+import { comLogin } from './login.js';
 
 const CNPJ = '00000000000787';
 const PREFIXO = '34';
@@ -21,7 +21,7 @@ describe('previsão de preço (RF08)', () => {
   let sequencia = 0;
   const ids: Record<string, number> = {};
 
-  const servidor = () => request(app.getHttpServer());
+  const servidor = () => comLogin(app);
 
   const limpar = async () => {
     await db.query('DELETE FROM forecasts');
@@ -36,8 +36,8 @@ describe('previsão de preço (RF08)', () => {
 
   const produto = async (nome: string, conteudo: number, categoria: string) => {
     const { rows } = await db.query<{ id: number }>(
-      `INSERT INTO products (nome_canonico, conteudo, unidade_padrao, category_id)
-       SELECT $1, $2, 'kg', id FROM categories WHERE nome = $3 RETURNING id`,
+      `INSERT INTO products (user_id, nome_canonico, conteudo, unidade_padrao, category_id)
+       SELECT 1, $1, $2, 'kg', id FROM categories WHERE nome = $3 RETURNING id`,
       [`${MARCADOR} ${nome}`, conteudo, categoria],
     );
     ids[nome] = rows[0].id;
@@ -51,8 +51,8 @@ describe('previsão de preço (RF08)', () => {
   ) => {
     sequencia += 1;
     const { rows } = await db.query<{ id: number }>(
-      `INSERT INTO receipts (store_id, chave_acesso, emitido_em, total, origem, status)
-       SELECT id, $2, $3, $4, 'qr', 'normalizado' FROM stores WHERE cnpj = $1 RETURNING id`,
+      `INSERT INTO receipts (user_id, store_id, chave_acesso, emitido_em, total, origem, status)
+       SELECT 1, id, $2, $3, $4, 'qr', 'normalizado' FROM stores WHERE cnpj = $1 AND user_id = 1 RETURNING id`,
       [
         CNPJ,
         `${PREFIXO}${String(sequencia).padStart(42, '0')}`,
@@ -78,7 +78,7 @@ describe('previsão de preço (RF08)', () => {
     await db.connect();
     await limpar();
     await db.query(
-      `INSERT INTO stores (cnpj, nome) VALUES ($1, 'LOJA PREVISAO')`,
+      `INSERT INTO stores (user_id, cnpj, nome) VALUES (1, $1, 'LOJA PREVISAO')`,
       [CNPJ],
     );
     await produto('queijo longo', 0.5, 'Queijos');

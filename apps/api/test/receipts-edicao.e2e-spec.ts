@@ -1,9 +1,9 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import pg from 'pg';
-import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { AppModule } from './../src/app.module.js';
+import { comLogin } from './login.js';
 
 const CNPJ = '00000000000434';
 const CHAVE = '24'.padEnd(44, '0');
@@ -42,7 +42,7 @@ describe('edição de cupom e itens (RF03)', () => {
   let cupomId: number;
   let itemId: number;
 
-  const servidor = () => request(app.getHttpServer());
+  const servidor = () => comLogin(app);
 
   const limpar = async () => {
     await db.query('DELETE FROM user_labels WHERE descricao_original LIKE $1', [
@@ -75,12 +75,12 @@ describe('edição de cupom e itens (RF03)', () => {
   beforeEach(async () => {
     await limpar();
     const { rows: lojas } = await db.query<{ id: number }>(
-      `INSERT INTO stores (cnpj, nome) VALUES ($1, 'LOJA') RETURNING id`,
+      `INSERT INTO stores (user_id, cnpj, nome) VALUES (1, $1, 'LOJA') RETURNING id`,
       [CNPJ],
     );
     const { rows } = await db.query<{ id: number }>(
-      `INSERT INTO receipts (store_id, chave_acesso, emitido_em, total, origem, status)
-       VALUES ($1, $2, now(), 5, 'qr', 'normalizado') RETURNING id`,
+      `INSERT INTO receipts (user_id, store_id, chave_acesso, emitido_em, total, origem, status)
+       VALUES (1, $1, $2, now(), 5, 'qr', 'normalizado') RETURNING id`,
       [lojas[0].id, CHAVE],
     );
     cupomId = rows[0].id;

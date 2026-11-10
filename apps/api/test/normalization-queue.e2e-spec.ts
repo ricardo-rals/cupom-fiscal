@@ -1,9 +1,9 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import pg from 'pg';
-import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { AppModule } from './../src/app.module.js';
+import { comLogin } from './login.js';
 
 const CNPJ = '00000000000353';
 const PREFIXO = 'TESTE-FILA';
@@ -45,7 +45,7 @@ describe('fila de normalização e revisão', () => {
   let db: pg.Client;
   let falhasRestantes = 0;
 
-  const servidor = () => request(app.getHttpServer());
+  const servidor = () => comLogin(app);
 
   const stubIa = () =>
     vi.stubGlobal(
@@ -94,13 +94,13 @@ describe('fila de normalização e revisão', () => {
 
   const inserirCupom = async (chave: string, status: string, descricao: string) => {
     const { rows: lojas } = await db.query<{ id: number }>(
-      `INSERT INTO stores (cnpj, nome) VALUES ($1, 'LOJA FILA')
-       ON CONFLICT (cnpj) DO UPDATE SET nome = 'LOJA FILA' RETURNING id`,
+      `INSERT INTO stores (user_id, cnpj, nome) VALUES (1, $1, 'LOJA FILA')
+       ON CONFLICT (user_id, cnpj) DO UPDATE SET nome = 'LOJA FILA' RETURNING id`,
       [CNPJ],
     );
     const { rows } = await db.query<{ id: number }>(
-      `INSERT INTO receipts (store_id, chave_acesso, emitido_em, total, origem, status)
-       VALUES ($1, $2, now(), 5, 'foto', $3) RETURNING id`,
+      `INSERT INTO receipts (user_id, store_id, chave_acesso, emitido_em, total, origem, status)
+       VALUES (1, $1, $2, now(), 5, 'foto', $3) RETURNING id`,
       [lojas[0].id, chave, status],
     );
     await db.query(
@@ -133,6 +133,8 @@ describe('fila de normalização e revisão', () => {
     process.env.AI_URL = 'http://ai-teste';
     db = new pg.Client({ connectionString: process.env.DATABASE_URL });
     await db.connect();
+    // As views só mostram o usuário declarado na sessão, como o agente faz.
+    await db.query("SELECT set_config('app.user_id', '1', false)");
     await limpar();
     stubIa();
   });
