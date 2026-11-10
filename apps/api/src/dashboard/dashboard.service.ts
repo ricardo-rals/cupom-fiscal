@@ -11,6 +11,7 @@ interface Filtros {
   to?: string;
   category?: string;
   store?: string;
+  q?: string;
 }
 
 const UM_DIA_MS = 86_400_000;
@@ -28,6 +29,11 @@ function dia(valor: string | undefined, campo: string) {
 const paraDia = (instante: Date) =>
   new Date(instante.getTime() - 3 * 3_600_000).toISOString().slice(0, 10);
 
+const contem = (texto: string) => ({
+  contains: texto,
+  mode: 'insensitive' as const,
+});
+
 /** O mesmo recorte das views: fora rascunho, cupom não normalizado e item em revisão. */
 const comprasValidas = (
   inicio: Date,
@@ -37,8 +43,30 @@ const comprasValidas = (
     store?: number;
     category?: string;
     product?: number;
+    busca?: string;
   },
 ): Prisma.ReceiptItemWhereInput => ({
+  // Texto em qualquer lugar: descrição do cupom, produto normalizado, marca ou mercado.
+  ...(filtros.busca && {
+    OR: [
+      { descricao_original: contem(filtros.busca) },
+      { receipt: { store: { nome: contem(filtros.busca) } } },
+      {
+        normalization: {
+          is: {
+            product: {
+              is: {
+                OR: [
+                  { nome_canonico: contem(filtros.busca) },
+                  { marca: contem(filtros.busca) },
+                ],
+              },
+            },
+          },
+        },
+      },
+    ],
+  }),
   receipt: {
     user_id: filtros.usuario,
     status: 'normalizado',
@@ -87,7 +115,7 @@ const somar = (itens: Parameters<typeof valorPago>[0][]) =>
 export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async resumo({ from, to, category, store }: Filtros, usuario: number) {
+  async resumo({ from, to, category, store, q }: Filtros, usuario: number) {
     const inicio = dia(from, 'from');
     const ultimoDia = dia(to, 'to');
     if (ultimoDia < inicio)
@@ -104,6 +132,7 @@ export class DashboardService {
       usuario,
       store: lojaId,
       category: category || undefined,
+      busca: q?.trim().slice(0, 100) || undefined,
     };
 
     const [itens, anteriores, categorias, mercados] = await Promise.all([
@@ -152,6 +181,13 @@ export class DashboardService {
               .times(100)
               .toDecimalPlaces(1),
       },
+      // Ordem cronológica: o web agrupa em semana ou mês quando o período é longo.
+      por_dia: somarPor(itens, (i) => paraDia(i.receipt.emitido_em), valorPago)
+        .map((g) => ({
+          dia: paraDia(g.linha.receipt.emitido_em),
+          total: g.total,
+        }))
+        .sort((a, b) => a.dia.localeCompare(b.dia)),
       por_categoria: somarPor(
         itens,
         (i) => produto(i).category_id,

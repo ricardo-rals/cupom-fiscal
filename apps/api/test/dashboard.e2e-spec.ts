@@ -200,6 +200,15 @@ describe('dashboard e histórico de preços (RF05, RF06)', () => {
       id: leite,
       nome: `${MARCADOR} leite`,
     });
+    expect(
+      body.por_dia.reduce(
+        (soma: number, d: { total: string }) => soma + Number(d.total),
+        0,
+      ),
+    ).toBe(42);
+    expect(body.por_dia.map((d: { dia: string }) => d.dia)).toEqual(
+      [...body.por_dia.map((d: { dia: string }) => d.dia)].sort(),
+    );
     expect(body.opcoes.categorias).toHaveLength(43);
     expect(body.opcoes.mercados.map((m: { id: number }) => m.id)).toEqual(
       expect.arrayContaining(lojas),
@@ -236,6 +245,18 @@ describe('dashboard e histórico de preços (RF05, RF06)', () => {
     const porMercado = await resumo({ ...MARCO, store: lojas[1] }).expect(200);
     expect(Number(porMercado.body.total)).toBe(12);
     expect(Number(porMercado.body.anterior.total)).toBe(0);
+  });
+
+  it('busca por texto no produto, sem diferenciar maiúsculas, também no período anterior', async () => {
+    const { body } = await resumo({ ...MARCO, q: 'SABAO' }).expect(200);
+    expect(Number(body.total)).toBe(10);
+    expect(Number(body.anterior.total)).toBe(0);
+
+    const porMercado = await resumo({ ...MARCO, q: 'loja b' }).expect(200);
+    expect(Number(porMercado.body.total)).toBe(12);
+
+    const nada = await resumo({ ...MARCO, q: 'inexistente' }).expect(200);
+    expect(Number(nada.body.total)).toBe(0);
   });
 
   it.each([
