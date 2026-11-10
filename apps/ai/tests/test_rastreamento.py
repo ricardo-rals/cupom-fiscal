@@ -7,7 +7,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
-from ai.gemini import LlmIndisponivel, gerar
+from ai.gemini import LlmIndisponivel, LlmNaoConfigurado, gerar
 from ai.normalize.llm import normalizar
 from ai.normalize.schema import ItemEntrada
 
@@ -104,3 +104,9 @@ def test_chamada_registrada_leva_o_id_do_trace() -> None:
     assert resposta.chamada.trace_id == trace.format_trace_id(
         raiz.get_span_context().trace_id
     )
+
+
+def test_chave_recusada_nao_vira_nova_tentativa() -> None:
+    cliente = _cliente(httpx.Response(401, json={"error": {"code": 401}}))
+    with pytest.raises(LlmNaoConfigurado):
+        gerar(cliente, "sistema", "mensagem", {})

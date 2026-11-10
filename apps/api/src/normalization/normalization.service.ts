@@ -87,10 +87,21 @@ export class NormalizationService {
 
     if (pendentes.length > 0) {
       const correcoes = await this.correcoes();
-      for (let i = 0; i < pendentes.length; i += TAMANHO_DO_LOTE) {
-        const lote = pendentes.slice(i, i + TAMANHO_DO_LOTE);
-        await this.normalizarLote(lote, correcoes, cupom.store.cnpj);
+      const lotes: ItemPendente[][] = [];
+      for (let i = 0; i < pendentes.length; i += TAMANHO_DO_LOTE)
+        lotes.push(pendentes.slice(i, i + TAMANHO_DO_LOTE));
+      // Só as chamadas à IA vão em paralelo: o tempo do cupom é o do lote mais lento.
+      // A gravação segue em ordem, porque lotes diferentes podem criar o mesmo produto.
+      const respostas = await Promise.allSettled(
+        lotes.map((lote) => this.consultarLote(lote, correcoes)),
+      );
+      for (const [i, resposta] of respostas.entries()) {
+        if (resposta.status === 'fulfilled')
+          await this.gravarLote(lotes[i], resposta.value, cupom.store.cnpj);
       }
+      // Os lotes bons ficam gravados; a falha devolve o cupom à fila só com o resto.
+      const falha = respostas.find((r) => r.status === 'rejected');
+      if (falha) throw falha.reason;
     }
 
     await this.prisma.receipt.update({
@@ -101,36 +112,38 @@ export class NormalizationService {
 
   /** Correção do usuário vence o cache, e os dois evitam chamar o LLM. */
   private async resolverSemLlm(itens: ItemPendente[], cnpj: string) {
+    const descricoes = [...new Set(itens.map((i) => i.descricao_original))];
+    const [rotulos, caches] = await Promise.all([
+      this.prisma.userLabel.findMany({
+        where: { descricao_original: { in: descricoes } },
+        orderBy: { id: 'asc' }, // o mais novo sobrescreve no Map
+      }),
+      this.prisma.normalizationCache.findMany({
+        where: { cnpj, descricao_original: { in: descricoes } },
+      }),
+    ]);
+    const correcoes = new Map(
+      rotulos.map((r) => [r.descricao_original, r.product_id]),
+    );
+    const cache = new Map(
+      caches.map((c) => [c.descricao_original, c.product_id]),
+    );
+
     const pendentes: ItemPendente[] = [];
+    const resolvidos = [];
     for (const item of itens) {
-      const correcao = await this.prisma.userLabel.findFirst({
-        where: { descricao_original: item.descricao_original },
-        orderBy: { id: 'desc' },
-      });
-      const cache = correcao
-        ? null
-        : await this.prisma.normalizationCache.findUnique({
-            where: {
-              descricao_original_cnpj: {
-                descricao_original: item.descricao_original,
-                cnpj,
-              },
-            },
-          });
-      const productId = correcao?.product_id ?? cache?.product_id;
-      if (productId === undefined) {
-        pendentes.push(item);
-        continue;
-      }
-      await this.prisma.itemNormalization.create({
-        data: {
+      const correcao = correcoes.get(item.descricao_original);
+      const productId = correcao ?? cache.get(item.descricao_original);
+      if (productId === undefined) pendentes.push(item);
+      else
+        resolvidos.push({
           receipt_item_id: item.id,
           product_id: productId,
           confianca: 1,
-          origem: correcao ? 'usuario' : 'cache',
-        },
-      });
+          origem: correcao !== undefined ? 'usuario' : 'cache',
+        } as const);
     }
+    await this.prisma.itemNormalization.createMany({ data: resolvidos });
     return pendentes;
   }
 
@@ -148,15 +161,16 @@ export class NormalizationService {
     }));
   }
 
-  private async normalizarLote(
+  private async consultarLote(lote: ItemPendente[], correcoes: unknown[]) {
+    if (await limiteDeGastoAtingido(this.prisma)) return 'sem_llm' as const;
+    return this.chamarIa(lote, correcoes);
+  }
+
+  private async gravarLote(
     lote: ItemPendente[],
-    correcoes: unknown[],
+    resposta: RespostaIa | 'sem_llm',
     cnpj: string,
   ) {
-    if (await limiteDeGastoAtingido(this.prisma))
-      return this.enviarParaRevisao(lote);
-
-    const resposta = await this.chamarIa(lote, correcoes);
     if (resposta === 'sem_llm') return this.enviarParaRevisao(lote);
 
     const limiar = Number(process.env.NORMALIZACAO_LIMIAR ?? 0.8);

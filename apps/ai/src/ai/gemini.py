@@ -81,6 +81,10 @@ def gerar(
                     },
                 },
             )
+            # Chave recusada não melhora com nova tentativa: vale como LLM não configurado.
+            if resposta.status_code in (401, 403):
+                span.set_status(Status(StatusCode.ERROR, "chave_recusada"))
+                raise LlmNaoConfigurado
             resposta.raise_for_status()
         except httpx.HTTPError as erro:
             # Sem o conteúdo do erro: ele pode repetir a requisição.
