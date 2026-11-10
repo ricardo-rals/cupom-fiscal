@@ -20,7 +20,7 @@ const rascunho = {
   itens: [
     {
       codigo: null,
-      descricao_original: 'CAFE 500G 123.456.789-09',
+      descricao_original: 'CAFE 500G 000.000.000-00',
       quantidade: '1',
       unidade: 'UN',
       valor_unitario: '12.40',

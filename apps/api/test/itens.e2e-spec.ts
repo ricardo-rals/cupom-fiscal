@@ -82,7 +82,7 @@ describe('compra sem nota e itens editáveis (etapa 3)', () => {
     [{ ...compra, itens: [{ ...compra.itens[0], unidade: 'saco' }] }],
     [{ ...compra, itens: [{ ...compra.itens[0], quantidade: '0' }] }],
     [{ ...compra, itens: [{ ...compra.itens[0], quantidade: '0.01', unidade: 'g', valor_total: '9999999999' }] }],
-    [{ ...compra, itens: [{ ...compra.itens[0], descricao_original: 'CPF 123.456.789-09' }] }],
+    [{ ...compra, itens: [{ ...compra.itens[0], descricao_original: 'CPF 000.000.000-00' }] }],
     [{ ...compra, usar_ia: 'talvez' }],
   ])('recusa compra inválida', async (corpo) => {
     await dono().post('/receipts/manual').send(corpo).expect(400);

@@ -25,7 +25,7 @@ DOCUMENTO AUXILIAR DA NOTA FISCAL DE CONSUMIDOR ELETRONICA
 003 BANANA PRATA 1,250 KG X 6,50 8,13
 Qtd. total de itens 3
 Valor a pagar R$ 68,97
-CONSUMIDOR CPF: 123.456.789-09
+CONSUMIDOR CPF: 000.000.000-00
 NFC-e n 12345 Serie 1 08/11/2026 10:15:32
 Chave de acesso:
 2926 1112 3456 7800 0190 6500 1000 0123 4510 0001 2345
@@ -63,7 +63,7 @@ def test_le_os_campos_da_danfe_e_descarta_o_cpf() -> None:
         ("LEITE UHT ITALAC 1L", Decimal(6), "UN", Decimal("32.94")),
         ("BANANA PRATA", Decimal("1.250"), "KG", Decimal("8.13")),
     ]
-    assert "123.456.789-09" not in rascunho.model_dump_json()
+    assert "000.000.000-00" not in rascunho.model_dump_json()
 
 
 def test_chave_sai_do_parametro_p_do_qr() -> None:
@@ -75,7 +75,7 @@ def test_resposta_do_llm_passa_pelas_mesmas_regras() -> None:
     rascunho = limpar(
         {
             "cnpj": "12.345.678/0001-90",
-            "nome": "LOJA 123.456.789-09",
+            "nome": "LOJA 000.000.000-00",
             "emitido_em": "2026-11-08T10:15:32-03:00",
             "chave_acesso": "curta",
             "total": 10,
